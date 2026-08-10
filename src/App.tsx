@@ -83,8 +83,12 @@ type PersonalizedTab =
 
 export default function App() {
   const [activities, setActivities] = useState<Activity[]>(() => {
-    const local = localStorage.getItem('af_activities_moscow');
-    return local ? JSON.parse(local) : INITIAL_ACTIVITIES;
+    try {
+      const local = localStorage.getItem('af_activities_moscow');
+      return local ? JSON.parse(local) : INITIAL_ACTIVITIES;
+    } catch {
+      return INITIAL_ACTIVITIES;
+    }
   });
 
   const [userPrefs, setUserPrefs] = useState<UserPreferences>(() => getUserPreferences());
@@ -100,46 +104,62 @@ export default function App() {
 
   // Waitlist State with localStorage
   const [waitlists, setWaitlists] = useState<WaitlistEntry[]>(() => {
-    const local = localStorage.getItem('af_waitlists');
-    return local ? JSON.parse(local) : [
-      {
-        id: 'wl-1',
-        activityId: 'act-1',
-        activityTitle: 'Wheel Throwing & Clay Sculpting Masterclass',
-        userName: 'Svetlana Ivanova',
-        userEmail: 'svetlana.i@example.com',
-        userPhone: '+7 999 444-55-66',
-        requestedDate: 'Aug 12, 2026',
-        createdAt: 'Aug 1, 2026',
-        status: 'pending'
-      }
-    ];
+    try {
+      const local = localStorage.getItem('af_waitlists');
+      return local ? JSON.parse(local) : [
+        {
+          id: 'wl-1',
+          activityId: 'act-1',
+          activityTitle: 'Wheel Throwing & Clay Sculpting Masterclass',
+          userName: 'Svetlana Ivanova',
+          userEmail: 'svetlana.i@example.com',
+          userPhone: '+7 999 444-55-66',
+          requestedDate: 'Aug 12, 2026',
+          createdAt: 'Aug 1, 2026',
+          status: 'pending'
+        }
+      ];
+    } catch {
+      return [];
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('af_waitlists', JSON.stringify(waitlists));
+    try {
+      localStorage.setItem('af_waitlists', JSON.stringify(waitlists));
+    } catch {}
   }, [waitlists]);
 
   // Routing State for Listing Details Page
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(() => {
-    const hash = window.location.hash;
-    if (hash.startsWith('#activity/')) {
-      return hash.replace('#activity/', '');
-    }
+    try {
+      const hash = window.location.hash;
+      if (hash.startsWith('#activity/')) {
+        return hash.replace('#activity/', '');
+      }
+    } catch {}
     return null;
   });
   const [savedScrollPosition, setSavedScrollPosition] = useState<number>(0);
 
   // Bookmarks state with localStorage
   const [savedIds, setSavedIds] = useState<string[]>(() => {
-    const local = localStorage.getItem('af_saved');
-    return local ? JSON.parse(local) : [];
+    try {
+      const local = localStorage.getItem('af_saved');
+      return local ? JSON.parse(local) : [];
+    } catch {
+      return [];
+    }
   });
 
   // Bookings state with localStorage
   const [bookings, setBookings] = useState<Booking[]>(() => {
-    const local = localStorage.getItem('af_bookings');
-    return local ? JSON.parse(local) : [];
+    try {
+      const local = localStorage.getItem('af_bookings');
+      return local ? JSON.parse(local) : [];
+    } catch {
+      return [];
+    }
   });
 
   // Modals & Drawers visibility
@@ -155,8 +175,10 @@ export default function App() {
   const [isMessagingModalOpen, setIsMessagingModalOpen] = useState(false);
   const [messagingActivity, setMessagingActivity] = useState<Activity | null>(null);
   const [conversations, setConversations] = useState<ActivityConversation[]>(() => {
-    const local = localStorage.getItem('af_conversations');
-    if (local) return JSON.parse(local);
+    try {
+      const local = localStorage.getItem('af_conversations');
+      if (local) return JSON.parse(local);
+    } catch {}
     return [
       {
         id: 'thread-1',
@@ -403,15 +425,21 @@ export default function App() {
 
   // Sync state to localStorage
   useEffect(() => {
-    localStorage.setItem('af_saved', JSON.stringify(savedIds));
+    try {
+      localStorage.setItem('af_saved', JSON.stringify(savedIds));
+    } catch {}
   }, [savedIds]);
 
   useEffect(() => {
-    localStorage.setItem('af_bookings', JSON.stringify(bookings));
+    try {
+      localStorage.setItem('af_bookings', JSON.stringify(bookings));
+    } catch {}
   }, [bookings]);
 
   useEffect(() => {
-    localStorage.setItem('af_activities_moscow', JSON.stringify(activities));
+    try {
+      localStorage.setItem('af_activities_moscow', JSON.stringify(activities));
+    } catch {}
   }, [activities]);
 
   const toggleSave = (activityId: string) => {
