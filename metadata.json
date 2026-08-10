@@ -1,0 +1,6 @@
+{
+  "name": "Activity Finder",
+  "description": "Find courses, workshops, and activities near your home by metro station and schedule",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

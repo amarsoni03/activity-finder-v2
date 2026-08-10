@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/* ── Mobile-first global resets ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+/* Scrollbar utilities used throughout dashboard */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Snap scroll */
+.snap-x {
+  scroll-snap-type: x mandatory;
+}
+.snap-start {
+  scroll-snap-align: start;
+}
+
+:root {
+  /* Core Brand Colors */
+  --primary: #A2FF00;           /* Neon Lime Green */
+  --primary-hover: #91E600;     /* Neon Lime Hover */
+  --brand-dark: #074213;        /* Deep Forest Green */
+  --brand-subtle: #E9FCD4;      /* Mint Green */
+
+  /* Canvas & Surfaces */
+  --bg-main: #F5F5F6;           /* Soft Off-White */
+  --card-surface: #FFFFFF;      /* Pure White */
+  --border: #E5E5E6;            /* Border Gray */
+
+  /* Typography */
+  --text-primary: #1A1A1A;      /* Dark Charcoal */
+  --text-muted: #7B7B7B;        /* Medium Slate Gray */
+}
+
+@theme {
+  --color-primary: #A2FF00;
+  --color-primary-hover: #91E600;
+  --color-brand-dark: #074213;
+  --color-brand-subtle: #E9FCD4;
+
+  --color-bg-main: #F5F5F6;
+  --color-card-surface: #FFFFFF;
+  --color-border: #E5E5E6;
+
+  --color-text-primary: #1A1A1A;
+  --color-text-muted: #7B7B7B;
+}
+
+/* Custom Palette Utility Classes */
+.bg-neon-lime { background-color: #A2FF00; }
+.hover\:bg-neon-lime-hover:hover { background-color: #91E600; }
+.text-neon-lime { color: #A2FF00; }
+
+.bg-forest-dark { background-color: #074213; }
+.text-forest-dark { color: #074213; }
+
+.bg-mint-subtle { background-color: #E9FCD4; }
+.text-mint-subtle { color: #E9FCD4; }
+
+.bg-off-white { background-color: #F5F5F6; }
+.bg-pure-white { background-color: #FFFFFF; }
+
+.text-dark-charcoal { color: #1A1A1A; }
+.text-slate-muted { color: #7B7B7B; }
+.border-[#E5E5E6] { border-color: #E5E5E6; }
