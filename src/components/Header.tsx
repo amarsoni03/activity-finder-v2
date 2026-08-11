@@ -16,6 +16,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { AudienceType } from '../types';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface HeaderProps {
   currentAudience?: AudienceType;
@@ -68,12 +69,14 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-200/70 transition-all h-16 sm:h-18 flex items-center text-slate-900">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 transition-all h-16 sm:h-18 flex items-center text-slate-900 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-between">
           
           {/* 1. Brand Logo & Primary Navigation Tabs */}
-          <div className="flex items-center space-x-6 sm:space-x-8 select-none">
-            <div 
+          <div className="flex items-center space-x-4 sm:space-x-6 select-none">
+            <motion.div 
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
               className="flex items-center space-x-2.5 cursor-pointer group" 
               onClick={() => {
                 if (onGoHome) {
@@ -95,35 +98,35 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               aria-label="Go to homepage"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-[#A2FF00] text-[#074213] rounded-xl flex items-center justify-center font-black text-base sm:text-lg transition-transform group-hover:scale-105">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-[#A2FF00] text-[#074213] rounded-xl flex items-center justify-center font-black text-base sm:text-lg transition-transform group-hover:scale-105 shadow-xs">
                 M
               </div>
-              <span className="text-sm sm:text-lg font-bold tracking-tight text-slate-900 leading-tight truncate max-w-[9rem] sm:max-w-none">
+              <span className="text-sm sm:text-lg font-extrabold tracking-tight text-slate-900 leading-tight truncate max-w-[9rem] sm:max-w-none">
                 ActivityFirst <span className="text-[#074213] font-extrabold">Moscow</span>
               </span>
-            </div>
+            </motion.div>
 
             {/* Core Primary Navigation Tabs */}
-            <nav className="hidden sm:flex items-center bg-slate-100/80 p-1 rounded-full text-xs font-semibold">
+            <nav className="hidden sm:flex items-center bg-slate-100 p-1 rounded-full text-xs font-semibold border border-slate-200/80">
               <button
                 onClick={() => onNavTabChange && onNavTabChange('explore')}
-                className={`px-4 py-1.5 rounded-full transition-all flex items-center space-x-1.5 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-full transition-all flex items-center space-x-1.5 cursor-pointer ${
                   activeNavTab === 'explore'
-                    ? 'bg-white text-slate-900 font-bold shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? 'bg-white text-slate-900 font-bold shadow-xs border border-slate-200/90'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Search className="w-3.5 h-3.5" />
+                <Search className="w-3.5 h-3.5 text-slate-600" />
                 <span>Explore</span>
               </button>
             </nav>
           </div>
 
           {/* 2. Desktop Primary Search Trigger */}
-          <div className="hidden md:flex items-center flex-1 max-w-xs mx-6">
+          <div className="hidden md:flex items-center flex-1 max-w-xs mx-4">
             <button
               onClick={onSearchClick || (() => window.scrollTo({ top: 300, behavior: 'smooth' }))}
-              className="w-full flex items-center space-x-2.5 px-4 py-2 bg-slate-100/70 hover:bg-slate-100 text-slate-500 hover:text-slate-900 rounded-full text-xs font-medium transition-all group"
+              className="w-full flex items-center space-x-2.5 px-4 py-2 bg-slate-100 hover:bg-slate-200/70 text-slate-600 hover:text-slate-900 rounded-full text-xs font-medium border border-slate-200 transition-all group"
             >
               <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700 transition-colors" />
               <span className="truncate">Search activities, time, metro...</span>
@@ -136,42 +139,48 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Action 1: AI Activity Concierge */}
             <button
               onClick={onOpenAiMatchmaker}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-[#A2FF00] hover:bg-[#91E600] text-[#074213] text-xs font-bold rounded-full transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-[#A2FF00] hover:bg-[#91E600] text-[#074213] text-xs font-black rounded-full transition-all cursor-pointer shadow-xs hover:shadow-md active:scale-95"
               title="AI Activity Concierge"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5 fill-[#074213]" />
               <span>AI Concierge</span>
             </button>
 
             {/* Action 2: Saved activities */}
             <button
               onClick={onOpenSaved}
-              className="relative flex items-center justify-center w-9 h-9 rounded-full hover:bg-slate-100 transition-all active:scale-95 cursor-pointer"
+              className="relative flex items-center justify-center w-9 h-9 rounded-full hover:bg-slate-100 transition-all active:scale-95 cursor-pointer text-slate-600 hover:text-slate-900"
               title={savedCount > 0 ? `Saved activities (${savedCount})` : 'Saved activities'}
               aria-label={savedCount > 0 ? `Saved activities, ${savedCount} items` : 'Saved activities'}
             >
               <Heart
                 className={`w-4 h-4 transition-colors ${
-                  savedCount > 0 ? 'fill-slate-900 text-slate-900' : 'text-slate-400'
+                  savedCount > 0 ? 'fill-rose-500 text-rose-500' : 'text-slate-600'
                 }`}
               />
               {savedCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[#A2FF00] text-[#074213] text-[10px] font-extrabold rounded-full flex items-center justify-center ring-2 ring-white">
+                <motion.span
+                  key={savedCount}
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[#A2FF00] text-[#074213] text-[10px] font-extrabold rounded-full flex items-center justify-center ring-2 ring-white"
+                >
                   {savedCount > 99 ? '99+' : savedCount}
-                </span>
+                </motion.span>
               )}
             </button>
 
             {/* Action 3: My Activities */}
             <button
               onClick={onOpenBookings}
-              className="flex items-center space-x-1.5 px-3 py-2 text-slate-700 hover:bg-slate-100 rounded-full transition-all text-xs font-semibold relative cursor-pointer"
+              className="flex items-center space-x-1.5 px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all text-xs font-semibold relative cursor-pointer border border-slate-200 hover:border-slate-300"
               title="My Activities"
             >
               <Calendar className="w-4 h-4 text-slate-600" />
               <span>Bookings</span>
               {bookingsCount > 0 && (
-                <span className="min-w-4 h-4 px-1 bg-[#074213] text-white text-[10px] font-bold rounded-full flex items-center justify-center ml-0.5">
+                <span className="min-w-4 h-4 px-1 bg-[#074213] text-[#A2FF00] text-[10px] font-bold rounded-full flex items-center justify-center ml-0.5 border border-emerald-600/50">
                   {bookingsCount}
                 </span>
               )}
@@ -181,34 +190,34 @@ export const Header: React.FC<HeaderProps> = ({
             {onOpenMessages && (
               <button
                 onClick={onOpenMessages}
-                className="flex items-center space-x-1.5 px-3 py-2 text-slate-700 hover:bg-slate-100 rounded-full transition-all text-xs font-semibold relative cursor-pointer"
+                className="flex items-center space-x-1.5 px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all text-xs font-semibold relative cursor-pointer border border-slate-200 hover:border-slate-300"
                 title="Provider Q&A Messages"
               >
                 <MessageSquare className="w-4 h-4 text-[#074213]" />
                 <span>Messages</span>
                 {messagesCount > 0 && (
-                  <span className="min-w-4 h-4 px-1 bg-[#074213] text-[#A2FF00] text-[10px] font-bold rounded-full flex items-center justify-center ml-0.5">
+                  <span className="min-w-4 h-4 px-1 bg-[#074213] text-[#A2FF00] text-[10px] font-bold rounded-full flex items-center justify-center ml-0.5 border border-emerald-600/50">
                     {messagesCount}
                   </span>
                 )}
               </button>
             )}
 
-            {/* Action 4: User / Profile Menu Dropdown */}
+            {/* Action 5: User / Profile Menu Dropdown */}
             <div className="relative" ref={profileDropdownRef}>
               <button
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="flex items-center space-x-1 p-1 pl-2 pr-1.5 bg-slate-100/80 hover:bg-slate-100 rounded-full transition-all text-xs font-semibold text-slate-700 cursor-pointer"
+                className="flex items-center space-x-1 p-1 pl-1.5 pr-1.5 bg-slate-100 hover:bg-slate-200/80 rounded-full transition-all text-xs font-semibold text-slate-700 border border-slate-200 cursor-pointer"
                 title="Account & Provider Menu"
               >
-                <div className="w-6 h-6 bg-[#074213] text-[#A2FF00] rounded-full flex items-center justify-center text-xs font-bold">
+                <div className="w-6 h-6 bg-[#074213] text-[#A2FF00] rounded-full flex items-center justify-center text-xs font-bold border border-emerald-500/30">
                   <User className="w-3.5 h-3.5" />
                 </div>
-                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isProfileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/70 p-2 z-50 animate-fade-in space-y-1 text-xs text-slate-800">
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/70 p-2 z-50 animate-fade-in space-y-1 text-xs text-slate-800">
                   <div className="p-3 bg-slate-50 rounded-xl mb-1">
                     <p className="font-bold text-slate-900 text-sm">Moscow Member</p>
                     <p className="text-[11px] text-slate-500">Activity Discovery Account</p>
@@ -296,9 +305,27 @@ export const Header: React.FC<HeaderProps> = ({
       </header>
 
       {/* Mobile Slide-Out Menu Drawer */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-xs animate-fade-in md:hidden">
-          <div className="w-4/5 max-w-sm bg-white h-full shadow-2xl p-5 flex flex-col justify-between overflow-y-auto text-slate-900">
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-[100] flex justify-end md:hidden">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            {/* Drawer Container */}
+            <motion.div
+              initial={{ x: '100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '100%', opacity: 0 }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+              className="relative z-10 w-4/5 max-w-sm bg-white h-full shadow-2xl p-5 flex flex-col justify-between overflow-y-auto text-slate-900"
+            >
             
             {/* Drawer Header */}
             <div>
@@ -369,7 +396,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <Calendar className={`w-4 h-4 ${activeNavTab === 'my-week' ? 'text-[#A2FF00]' : 'text-slate-500'}`} />
                     <span>My Week (Personalized)</span>
                   </div>
-                  <span className={`w-2 h-2 rounded-full ${activeNavTab === 'my-week' ? 'bg-[#A2FF00]' : 'bg-[#074213]'} animate-pulse`} />
+                  <span className={`w-2 h-2 rounded-full ${activeNavTab === 'my-week' ? 'bg-[#A2FF00]' : 'bg-[#074213]'}`} />
                 </button>
 
                 {/* 3. AI Activity Concierge (Premium Subtle Lime Accent Card) */}
@@ -502,7 +529,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <Building2 className={`w-4 h-4 ${activeNavTab === 'provider-dashboard' ? 'text-[#A2FF00]' : 'text-emerald-700'}`} />
+                    <Building2 className={`w-4 h-4 ${activeNavTab === 'provider-dashboard' ? 'text-[#A2FF00]' : 'text-slate-500'}`} />
                     <span>Instructor & Provider Hub</span>
                   </div>
                 </button>
@@ -531,9 +558,10 @@ export const Header: React.FC<HeaderProps> = ({
               <p className="text-[10px] mt-0.5 text-slate-500">Moscow Activity Discovery Platform</p>
             </div>
 
-          </div>
+          </motion.div>
         </div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   );
 };

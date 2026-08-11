@@ -5,6 +5,7 @@ import { METRO_LINES, METRO_STATIONS } from './data/metroData';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { HeroSearch } from './components/HeroSearch';
+import { MobileStickyNav } from './components/search/MobileStickyNav';
 import { SidebarFilters } from './components/SidebarFilters';
 import { ActivityCard } from './components/ActivityCard';
 import { ActivityDetailPage } from './components/ActivityDetailPage';
@@ -989,16 +990,27 @@ export default function App() {
           {/* Primary Search Hero Box */}
           <HeroSearch
             filters={filters}
-            onApplySearch={(newF) => updateFilters(newF)}
+            activities={activities}
+            onApplySearch={(newF) => {
+              if (selectedActivityId) {
+                setSelectedActivityId(null);
+              }
+              if (activeNavTab !== 'explore') {
+                setActiveNavTab('explore');
+              }
+              updateFilters(newF);
+            }}
+            onSelectActivity={(act) => openActivityDetail(act)}
             onOpenAiMatchmaker={() => setIsAiMatchmakerOpen(true)}
             onOpenFreeTimePlanner={() => {
-          setActiveNavTab('free-time');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
+              setActiveNavTab('free-time');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           />
 
           {/* Main Page Layout Container */}
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 w-full">
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 w-full space-y-12">
+            
             
             {/* Shared layout: sidebar + toolbar persist across list / map / schedule */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:gap-10 items-start">
@@ -1014,20 +1026,26 @@ export default function App() {
                 </div>
 
                 {/* Mobile Filter Toggle Drawer Trigger */}
-                <div className="lg:hidden">
-                  <SidebarFilters
-                    filters={filters}
-                    onFilterChange={updateFilters}
-                    onResetFilters={resetFilters}
-                    resultsCount={filteredActivities.length}
-                  />
+                <div className="lg:hidden bg-white rounded-2xl p-4 border border-slate-200/70 shadow-2xs mb-2 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <SlidersHorizontal className="w-4 h-4 text-slate-700" />
+                    <span className="text-xs font-bold text-slate-900">Filter Results</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileFiltersOpen(true)}
+                    className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 cursor-pointer shadow-xs hover:bg-slate-800 transition-all"
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    <span>Open Filters</span>
+                  </button>
                 </div>
 
                 {/* Main Content Area (Right Side - 2-Column Desktop Grid) */}
                 <div className="lg:col-span-3 space-y-6">
                   
                   {/* Result Header & Current Search Summary Box — always visible across views */}
-                  <div className="bg-white rounded-3xl p-6 border border-slate-200/70 shadow-2xs space-y-4 sticky top-20 z-30">
+                  <div id="results-section" className="bg-white rounded-3xl p-6 border border-slate-200/70 shadow-2xs space-y-4 sticky top-20 z-30 scroll-mt-24">
                     
                     {/* Top Row: Total Count, View Toggle & Premium Sort */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
@@ -1438,15 +1456,37 @@ export default function App() {
         onSendMessage={handleSendMessage}
       />
 
+      {/* Slide-out Mobile & Desktop Filter Modal */}
+      <SidebarFilters
+        filters={filters}
+        onFilterChange={updateFilters}
+        onResetFilters={resetFilters}
+        resultsCount={filteredActivities.length}
+        isOpen={isMobileFiltersOpen}
+        onClose={() => setIsMobileFiltersOpen(false)}
+      />
+
       {/* Floating Action Button for Instructors */}
       <button
         onClick={() => setIsCreateModalOpen(true)}
-        className="fixed bottom-[5.5rem] sm:bottom-6 right-4 sm:right-6 z-30 flex items-center space-x-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full shadow-lg border border-slate-700 hover:scale-105 active:scale-95 transition-all group cursor-pointer"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex items-center space-x-1.5 sm:space-x-2 px-3.5 py-2.5 sm:px-4 sm:py-3 bg-slate-900/95 hover:bg-slate-900 text-white text-xs font-bold rounded-full shadow-xl border border-slate-700/90 backdrop-blur-xs hover:scale-105 active:scale-95 transition-all group cursor-pointer"
         title="Post a Class"
       >
-        <PlusCircle className="w-4 h-4 text-emerald-400 group-hover:rotate-90 transition-transform duration-200" />
-        <span className="hidden sm:inline">Post a Class</span>
+        <PlusCircle className="w-4 h-4 text-[#A2FF00] group-hover:rotate-90 transition-transform duration-200 shrink-0" />
+        <span className="text-xs font-bold">Post a Class</span>
       </button>
+
+      {/* MOBILE STICKY NAVIGATION BAR */}
+      <MobileStickyNav
+        activeTab={activeNavTab === 'my-week' ? 'my-week' : activeNavTab === 'user-dashboard' ? 'profile' : 'explore'}
+        onSelectTab={(tab) => {
+          if (tab === 'explore') setActiveNavTab('explore');
+          if (tab === 'saved') setIsSavedModalOpen(true);
+          if (tab === 'my-week') setActiveNavTab('my-week');
+          if (tab === 'profile') setActiveNavTab('user-dashboard');
+        }}
+        savedCount={savedIds.length}
+      />
 
     </div>
   );

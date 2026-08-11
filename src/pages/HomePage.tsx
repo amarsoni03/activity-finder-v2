@@ -184,14 +184,18 @@ export const HomePage: React.FC<HomePageProps> = ({
     <div className="space-y-16 pb-20">
       
       {/* 1. HERO SEARCH SECTION */}
-      <HeroSearch
-        filters={filters}
-        onApplySearch={onApplyFilters}
-        onOpenAiMatchmaker={onOpenAiMatchmaker}
-        onOpenFreeTimePlanner={onOpenFreeTimePlanner}
-      />
+      <div className="relative z-40">
+        <HeroSearch
+          filters={filters}
+          onApplySearch={onApplyFilters}
+          activities={activities}
+          onOpenAiMatchmaker={onOpenAiMatchmaker}
+          onOpenFreeTimePlanner={onOpenFreeTimePlanner}
+        />
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
+
 
         {/* 2. QUICK DISCOVERY SECTIONS */}
         <section className="space-y-6">

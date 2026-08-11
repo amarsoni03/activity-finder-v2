@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { CheckCircle2, Info, AlertCircle, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export interface ToastMessage {
   id: string;
@@ -16,9 +17,11 @@ interface ToastProps {
 export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 max-w-sm w-full pointer-events-none px-4">
-      {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
-      ))}
+      <AnimatePresence>
+        {toasts.map((toast) => (
+          <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
@@ -47,8 +50,12 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
   };
 
   return (
-    <div
-      className={`pointer-events-auto flex items-start space-x-3 p-3.5 rounded-2xl border shadow-lg backdrop-blur-md transition-all duration-300 transform translate-y-0 animate-in fade-in slide-in-from-bottom-2 ${
+    <motion.div
+      initial={{ x: 20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: 20, opacity: 0 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className={`pointer-events-auto flex items-start space-x-3 p-3.5 rounded-2xl border shadow-lg backdrop-blur-md ${
         bgColors[toast.type]
       }`}
     >
@@ -59,10 +66,10 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
       </div>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="text-slate-400 hover:text-slate-700 p-0.5 rounded-lg transition-colors"
+        className="text-slate-400 hover:text-slate-700 p-0.5 rounded-lg transition-colors cursor-pointer"
       >
         <X className="w-3.5 h-3.5" />
       </button>
-    </div>
+    </motion.div>
   );
 };

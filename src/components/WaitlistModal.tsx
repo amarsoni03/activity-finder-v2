@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Activity } from '../types';
 import { formatPrice } from '../utils/formatters';
+import { motion, AnimatePresence } from 'motion/react';
 
 export interface WaitlistState {
   joinedActivityIds: Record<string, { position: number; joinedAt: string }>;
@@ -137,32 +138,51 @@ export const WaitlistModal: React.FC<WaitlistModalProps> = ({
   const alternativeSessions = getMockAlternativeSessions(activity);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
-        
-        {/* --- 1. TOP HEADER BANNER --- */}
-        <div className="p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white flex items-start justify-between relative overflow-hidden">
-          <div className="space-y-1 relative z-10">
-            <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold uppercase tracking-wider">
-              <Users className="w-3.5 h-3.5 text-amber-400" />
-              <span>Session Fully Booked • High Demand</span>
-            </div>
-
-            <h2 className="text-xl font-extrabold text-white pt-1">
-              Join Waitlist & Explore Open Dates
-            </h2>
-            <p className="text-xs text-slate-300">
-              Don't miss out! Get priority alerts if a spot opens up or book alternative dates instantly.
-            </p>
-          </div>
-
-          <button
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="p-2 hover:bg-slate-800 rounded-full text-slate-300 hover:text-white transition-colors relative z-10"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+          />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 4 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]"
           >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+            
+            {/* --- 1. TOP HEADER BANNER --- */}
+            <div className="p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white flex items-start justify-between relative overflow-hidden">
+              <div className="space-y-1 relative z-10">
+                <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold uppercase tracking-wider">
+                  <Users className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Session Fully Booked • High Demand</span>
+                </div>
+
+                <h2 className="text-xl font-extrabold text-white pt-1">
+                  Join Waitlist & Explore Open Dates
+                </h2>
+                <p className="text-xs text-slate-300">
+                  Don't miss out! Get priority alerts if a spot opens up or book alternative dates instantly.
+                </p>
+              </div>
+
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                transition={{ duration: 0.15 }}
+                onClick={onClose}
+                className="p-2 hover:bg-slate-800 rounded-full text-slate-300 hover:text-white transition-colors relative z-10 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </motion.button>
+            </div>
 
         {/* --- 2. MODAL CONTENT CONTAINER --- */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1">
@@ -388,7 +408,9 @@ export const WaitlistModal: React.FC<WaitlistModalProps> = ({
 
         </div>
 
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };

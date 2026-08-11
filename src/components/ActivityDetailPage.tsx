@@ -31,6 +31,7 @@ import {
   RefreshCw,
   PlayCircle,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Activity } from '../types';
 import { formatPrice } from '../utils/formatters';
 import {
@@ -1200,7 +1201,12 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
       {/* ========================================================================= */}
       {/* MOBILE STICKY BOTTOM CTA BAR */}
       {/* ========================================================================= */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 p-4 shadow-2xl">
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 p-4 shadow-2xl"
+      >
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
           <div>
             <span className="text-[10px] font-bold text-emerald-700 uppercase block">Starts {activity.startDate}</span>
@@ -1215,7 +1221,7 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Mobile Booking Drawer */}
       <MobileBookingDrawer

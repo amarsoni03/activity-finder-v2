@@ -19,6 +19,7 @@ import {
   SlidersHorizontal,
   Info,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Activity } from '../types';
 import { ProviderTrustBadge } from './ProviderTrustBadge';
 
@@ -156,7 +157,12 @@ export const CompareActivities: React.FC<CompareActivitiesProps> = ({
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <motion.div
+      initial={{ y: '100%', opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="space-y-6"
+    >
       {/* --- Top Control Bar --- */}
       <div className="bg-white rounded-3xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
@@ -887,6 +893,6 @@ export const CompareActivities: React.FC<CompareActivitiesProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

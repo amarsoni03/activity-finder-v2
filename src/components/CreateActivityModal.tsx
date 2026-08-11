@@ -20,6 +20,7 @@ import {
   Upload,
   Image as ImageIcon,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const DRAFT_STORAGE_KEY = 'activity_finder_provider_draft';
 
@@ -602,7 +603,15 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#F9FAFB] flex flex-col pb-28 animate-fade-in">
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.98, y: 4 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed inset-0 z-50 overflow-y-auto bg-[#F9FAFB] flex flex-col pb-28"
+        >
       {/* Page hero header */}
       <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
@@ -1897,7 +1906,9 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
           </div>
         </div>
       )}
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

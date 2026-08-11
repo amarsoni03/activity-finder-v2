@@ -7,6 +7,7 @@ import {
   Heart,
   ArrowRight,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Activity } from '../types';
 import { formatPrice } from '../utils/formatters';
 import { ProviderTrustBadge } from './ProviderTrustBadge';
@@ -46,9 +47,11 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
     : `${activity.sessionDate || activity.startDate} • ${activity.startTime || '18:00'}–${activity.endTime || '19:30'}`;
 
   return (
-    <article
+    <motion.article
       onClick={() => onSelectActivity(activity)}
-      className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/60 hover:border-slate-300 shadow-2xs hover:shadow-lg sm:hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between group cursor-pointer overflow-hidden relative h-full min-w-0 w-full"
+      whileHover={{ y: -3, scale: 1.01 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/60 hover:border-slate-300 shadow-2xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between group cursor-pointer overflow-hidden relative h-full min-w-0 w-full"
     >
       <div>
         {/* Cover Image Container (Fixed Height h-56 for 100% Layout Consistency) */}
@@ -56,7 +59,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           <img
             src={activity.coverImage || activity.image}
             alt={activity.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-300"
             referrerPolicy="no-referrer"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
@@ -67,7 +70,9 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
               {activity.category}
             </span>
 
-            <button
+            <motion.button
+              whileTap={{ scale: 0.88 }}
+              transition={{ duration: 0.15 }}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleSave(activity.id);
@@ -80,7 +85,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
               title={isSaved ? 'Remove from saved' : 'Save activity'}
             >
               <Heart className={`w-4 h-4 ${isSaved ? 'fill-[#A2FF00]' : ''}`} />
-            </button>
+            </motion.button>
           </div>
 
           {/* Bottom Info Bar: Availability & Price */}
@@ -183,16 +188,16 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             e.stopPropagation();
             onQuickBook(activity);
           }}
-          className={`w-full sm:w-auto px-5 py-2.5 text-xs font-bold rounded-xl transition-all shrink-0 min-h-[44px] flex items-center justify-center cursor-pointer sm:group-hover:scale-105 shadow-2xs ${
+          className={`w-full sm:w-auto px-5 py-2.5 text-xs font-bold rounded-xl transition-all shrink-0 min-h-[44px] flex items-center justify-center cursor-pointer shadow-2xs ${
             seatsLeft === 0
               ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 font-black'
               : 'bg-[#A2FF00] hover:bg-[#91E600] text-[#074213]'
           }`}
         >
           <span>{seatsLeft === 0 ? 'Join Waitlist' : primaryCtaText}</span>
-          <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+          <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-200 group-hover:translate-x-1" />
         </button>
       </div>
-    </article>
+    </motion.article>
   );
 };

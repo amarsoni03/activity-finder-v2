@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Sparkles, X, ArrowRight, Loader2, CheckCircle, Zap, MapPin, Calendar, Compass } from 'lucide-react';
+import { Sparkles, X, ArrowRight, Loader2, Zap, Compass } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Activity, AiMatchResult } from '../types';
 import { findAiMatches } from '../services/aiService';
 
@@ -19,8 +20,6 @@ export const AiConciergeModal: React.FC<AiConciergeModalProps> = ({
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<{ activity: Activity; match: AiMatchResult }[] | null>(null);
-
-  if (!isOpen) return null;
 
   const samplePrompts = [
     'Tuesday evening Russian language or Music near Arbatskaya under 2,500 ₽',
@@ -52,40 +51,58 @@ export const AiConciergeModal: React.FC<AiConciergeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
-        
-        {/* Header */}
-        <div className="p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-green-950 text-white flex items-center justify-between relative overflow-hidden">
-          <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 bg-green-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="flex items-center space-x-3 z-10">
-            <div className="w-10 h-10 rounded-2xl bg-green-500/20 border border-green-400/30 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-green-400 animate-pulse" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold">AI Class Matchmaker</h3>
-              <p className="text-xs text-slate-300">
-                Describe your ideal schedule & interest in plain language
-              </p>
-            </div>
-          </div>
-          <button
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-full bg-white/5 hover:bg-white/10 transition-colors z-10"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+          />
 
-        {/* Query Input Section */}
-        <div className="p-6 space-y-4 border-b border-slate-100 bg-slate-50/50">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSearch(query);
-            }}
-            className="flex items-center space-x-2"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 4 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden"
           >
+            {/* Header */}
+            <div className="p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-green-950 text-white flex items-center justify-between relative overflow-hidden">
+              <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 bg-green-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="flex items-center space-x-3 z-10">
+                <div className="w-10 h-10 rounded-2xl bg-green-500/20 border border-green-400/30 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">AI Class Matchmaker</h3>
+                  <p className="text-xs text-slate-300">
+                    Describe your ideal schedule & interest in plain language
+                  </p>
+                </div>
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                transition={{ duration: 0.15 }}
+                onClick={onClose}
+                className="p-2 text-slate-400 hover:text-white rounded-full bg-white/5 hover:bg-white/10 transition-colors z-10 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </motion.button>
+            </div>
+
+            {/* Query Input Section */}
+            <div className="p-6 space-y-4 border-b border-slate-100 bg-slate-50/50">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSearch(query);
+                }}
+                className="flex items-center space-x-2"
+              >
             <div className="relative flex-1">
               <input
                 type="text"
@@ -221,8 +238,9 @@ export const AiConciergeModal: React.FC<AiConciergeModalProps> = ({
             </div>
           )}
         </div>
-
-      </div>
-    </div>
+      </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };

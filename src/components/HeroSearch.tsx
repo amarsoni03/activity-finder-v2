@@ -1,56 +1,58 @@
-import React, { useState } from 'react';
-import { Search, Sparkles, Calendar, MapPin, Globe } from 'lucide-react';
-import { Category, AudienceType, TimeOfDay, DayOfWeek, FilterState, GoalType, DeliveryFilter } from '../types';
-import { CATEGORIES } from '../data/activitiesData';
+import React, { useState, useEffect } from 'react';
+import { Search, Sparkles, SlidersHorizontal, RotateCcw, ChevronRight } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Category, AudienceType, TimeOfDay, DayOfWeek, FilterState, DeliveryFilter, LanguageFilter, Activity } from '../types';
+import { INITIAL_ACTIVITIES } from '../data/activitiesData';
 import { METRO_LINES, METRO_STATIONS } from '../data/metroData';
+
+import { SearchAutocomplete } from './search/SearchAutocomplete';
+import { AttendanceModeSelector } from './search/AttendanceModeSelector';
+import { CategoryPopover } from './search/CategoryPopover';
+import { MetroPopover } from './search/MetroPopover';
+import { LanguagePopover } from './search/LanguagePopover';
+import { TimeSelectorPopover } from './search/TimeSelectorPopover';
+import { AudienceSelector } from './search/AudienceSelector';
+import { QuickDiscoveryChips } from './search/QuickDiscoveryChips';
+import { MobileSearchSheet } from './search/MobileSearchSheet';
 
 interface HeroSearchProps {
   filters: FilterState;
   onApplySearch: (newFilters: Partial<FilterState>) => void;
+  activities?: Activity[];
   onOpenAiMatchmaker?: () => void;
   onOpenFreeTimePlanner?: () => void;
 }
 
-const QUICK_CHIPS = [
-  'Today',
-  'Tomorrow',
-  'Weekend',
-  'Morning',
-  'Afternoon',
-  'Evening',
-  'Beginner',
-  'Free Trial',
-  'Instant Booking',
-] as const;
-
-type QuickChip = (typeof QUICK_CHIPS)[number];
-
 export const HeroSearch: React.FC<HeroSearchProps> = ({
   filters,
   onApplySearch,
-  onOpenAiMatchmaker,
-  onOpenFreeTimePlanner,
+  activities = INITIAL_ACTIVITIES,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<Category>(filters.category);
-  const [selectedDeliveryMode, setSelectedDeliveryMode] = useState<DeliveryFilter>(filters.deliveryMode || 'In Person');
-  const [selectedMetroLine, setSelectedMetroLine] = useState<string>(filters.metroLineId);
-  const [selectedStationIds, setSelectedStationIds] = useState<string[]>(filters.metroStationIds);
-  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(filters.daysOfWeek);
-  const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<TimeOfDay[]>(filters.timeOfDaySlots);
-  const [selectedAudience, setSelectedAudience] = useState<AudienceType>(filters.audience);
-  const [selectedGoal, setSelectedGoal] = useState<GoalType>(filters.goal || 'All Goals');
-  const [searchKeyword, setSearchKeyword] = useState<string>(filters.searchKeyword);
+  const [searchKeyword, setSearchKeyword] = useState<string>(filters.searchKeyword || '');
+  const [attendanceMode, setAttendanceMode] = useState<DeliveryFilter>(filters.deliveryMode || 'All');
+  const [selectedCategory, setSelectedCategory] = useState<Category>(filters.category || 'All Categories');
+  const [selectedMetroLine, setSelectedMetroLine] = useState<string>(filters.metroLineId || 'all');
+  const [selectedStationIds, setSelectedStationIds] = useState<string[]>(filters.metroStationIds || []);
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageFilter>(filters.language || 'All');
+  const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<TimeOfDay[]>(filters.timeOfDaySlots || []);
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(filters.daysOfWeek || []);
+  const [selectedAudience, setSelectedAudience] = useState<AudienceType>(filters.audience || 'All');
 
-  React.useEffect(() => {
-    setSelectedCategory(filters.category);
-    setSelectedDeliveryMode(filters.deliveryMode || 'In Person');
-    setSelectedMetroLine(filters.metroLineId);
-    setSelectedStationIds(filters.metroStationIds);
-    setSelectedDays(filters.daysOfWeek);
-    setSelectedTimeOfDay(filters.timeOfDaySlots);
-    setSelectedAudience(filters.audience);
-    setSelectedGoal(filters.goal || 'All Goals');
-    setSearchKeyword(filters.searchKeyword);
+  // Mobile Bottom Sheets
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [mobileMetroSheetOpen, setMobileMetroSheetOpen] = useState(false);
+
+  // Sync state when props change
+  useEffect(() => {
+    setSearchKeyword(filters.searchKeyword || '');
+    setAttendanceMode(filters.deliveryMode || 'All');
+    setSelectedCategory(filters.category || 'All Categories');
+    setSelectedMetroLine(filters.metroLineId || 'all');
+    setSelectedStationIds(filters.metroStationIds || []);
+    setSelectedLanguage(filters.language || 'All');
+    setSelectedTimeOfDay(filters.timeOfDaySlots || []);
+    setSelectedDays(filters.daysOfWeek || []);
+    setSelectedAudience(filters.audience || 'All');
   }, [filters]);
 
   const toggleTimeOfDay = (slot: TimeOfDay) => {
@@ -61,416 +63,562 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
     }
   };
 
-  const handleDeliveryModeChange = (mode: DeliveryFilter) => {
-    setSelectedDeliveryMode(mode);
-    onApplySearch({
-      category: selectedCategory,
-      deliveryMode: mode,
-      metroLineId: selectedMetroLine,
-      metroStationIds: selectedStationIds,
-      daysOfWeek: selectedDays,
-      timeOfDaySlots: selectedTimeOfDay,
-      audience: selectedAudience,
-      goal: selectedGoal,
-      searchKeyword: searchKeyword,
-    });
+  const handleStationToggle = (stationId: string) => {
+    if (selectedStationIds.includes(stationId)) {
+      setSelectedStationIds(selectedStationIds.filter((id) => id !== stationId));
+    } else {
+      setSelectedStationIds([...selectedStationIds, stationId]);
+    }
   };
 
-  const handleExecuteSearch = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    onApplySearch({
+  const isOnlineMode =
+    attendanceMode === 'Live Online' ||
+    attendanceMode === 'Online' ||
+    attendanceMode === 'Self-Paced' ||
+    filters.deliveryMode === 'Live Online';
+
+  const executeSearch = (overrideProps?: Partial<FilterState>, shouldScroll = false) => {
+    const activeMode = overrideProps?.deliveryMode || attendanceMode;
+    const activeIsOnline =
+      activeMode === 'Live Online' || activeMode === 'Online' || activeMode === 'Self-Paced';
+
+    const payload: Partial<FilterState> = {
+      searchKeyword,
+      deliveryMode: activeMode,
       category: selectedCategory,
-      deliveryMode: selectedDeliveryMode,
-      metroLineId: selectedMetroLine,
-      metroStationIds: selectedStationIds,
-      daysOfWeek: selectedDays,
+      metroLineId: activeIsOnline ? 'all' : selectedMetroLine,
+      metroStationIds: activeIsOnline ? [] : selectedStationIds,
+      language: activeIsOnline ? selectedLanguage : filters.language,
       timeOfDaySlots: selectedTimeOfDay,
+      daysOfWeek: selectedDays,
       audience: selectedAudience,
-      goal: selectedGoal,
-      searchKeyword: searchKeyword,
-    });
+      ...overrideProps,
+    };
+    onApplySearch(payload);
+
+    if (shouldScroll) {
+      setTimeout(() => {
+        const resultsEl = document.getElementById('results-section');
+        if (resultsEl) {
+          resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          window.scrollTo({ top: 380, behavior: 'smooth' });
+        }
+      }, 50);
+    }
   };
 
-  const handleClearAll = () => {
+  const handleAttendanceChange = (mode: DeliveryFilter) => {
+    setAttendanceMode(mode);
+    executeSearch({ deliveryMode: mode });
+  };
+
+  const handleResetFilters = () => {
+    setSearchKeyword('');
+    setAttendanceMode('All');
     setSelectedCategory('All Categories');
-    setSelectedDeliveryMode('In Person');
     setSelectedMetroLine('all');
     setSelectedStationIds([]);
-    setSelectedDays([]);
+    setSelectedLanguage('All');
     setSelectedTimeOfDay([]);
+    setSelectedDays([]);
     setSelectedAudience('All');
-    setSelectedGoal('All Goals');
-    setSearchKeyword('');
+
     onApplySearch({
+      searchKeyword: '',
+      deliveryMode: 'All',
       category: 'All Categories',
-      deliveryMode: 'In Person',
       metroLineId: 'all',
       metroStationIds: [],
-      daysOfWeek: [],
+      language: 'All',
       timeOfDaySlots: [],
+      daysOfWeek: [],
       audience: 'All',
-      goal: 'All Goals',
-      searchKeyword: '',
-    });
-  };
-
-  const getTodayDayOfWeek = (): DayOfWeek => {
-    const days: DayOfWeek[] = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-    ];
-    return days[new Date().getDay()];
-  };
-
-  const getTomorrowDayOfWeek = (): DayOfWeek => {
-    const days: DayOfWeek[] = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-    ];
-    return days[(new Date().getDay() + 1) % 7];
-  };
-
-  const isChipActive = (chip: QuickChip): boolean => {
-    const today = getTodayDayOfWeek();
-    const tomorrow = getTomorrowDayOfWeek();
-    switch (chip) {
-      case 'Today':
-        return selectedDays.length === 1 && selectedDays.includes(today);
-      case 'Tomorrow':
-        return selectedDays.length === 1 && selectedDays.includes(tomorrow);
-      case 'Weekend':
-        return selectedDays.includes('Saturday') && selectedDays.includes('Sunday');
-      case 'Morning':
-        return selectedTimeOfDay.length === 1 && selectedTimeOfDay.includes('Morning');
-      case 'Afternoon':
-        return selectedTimeOfDay.length === 1 && selectedTimeOfDay.includes('Afternoon');
-      case 'Evening':
-        return selectedTimeOfDay.length === 1 && selectedTimeOfDay.includes('Evening');
-      case 'Beginner':
-        return filters.level === 'Beginner' || searchKeyword === 'Beginner';
-      case 'Free Trial':
-        return searchKeyword === 'Free Trial';
-      case 'Instant Booking':
-        return searchKeyword === 'Instant Booking';
-      default:
-        return false;
-    }
-  };
-
-  const handleQuickFilter = (chip: QuickChip) => {
-    let newDays = [...selectedDays];
-    let newTime = [...selectedTimeOfDay];
-    let newKeyword = searchKeyword;
-    let newLevel = filters.level;
-
-    const today = getTodayDayOfWeek();
-    const tomorrow = getTomorrowDayOfWeek();
-
-    switch (chip) {
-      case 'Today':
-        newDays = isChipActive('Today') ? [] : [today];
-        break;
-      case 'Tomorrow':
-        newDays = isChipActive('Tomorrow') ? [] : [tomorrow];
-        break;
-      case 'Weekend':
-        newDays = isChipActive('Weekend') ? [] : ['Saturday', 'Sunday'];
-        break;
-      case 'Morning':
-        newTime = isChipActive('Morning') ? [] : ['Morning'];
-        break;
-      case 'Afternoon':
-        newTime = isChipActive('Afternoon') ? [] : ['Afternoon'];
-        break;
-      case 'Evening':
-        newTime = isChipActive('Evening') ? [] : ['Evening'];
-        break;
-      case 'Beginner':
-        newKeyword = isChipActive('Beginner') ? '' : 'Beginner';
-        newLevel = isChipActive('Beginner') ? 'All Levels' : 'Beginner';
-        break;
-      case 'Free Trial':
-        newKeyword = searchKeyword === 'Free Trial' ? '' : 'Free Trial';
-        break;
-      case 'Instant Booking':
-        newKeyword = searchKeyword === 'Instant Booking' ? '' : 'Instant Booking';
-        break;
-    }
-
-    setSelectedDays(newDays);
-    setSelectedTimeOfDay(newTime);
-    setSearchKeyword(newKeyword);
-
-    onApplySearch({
-      daysOfWeek: newDays,
-      timeOfDaySlots: newTime,
-      searchKeyword: newKeyword,
-      level: newLevel,
     });
   };
 
   return (
-    <section className="bg-slate-50/50 px-4 sm:px-6 md:px-8 py-10 sm:py-16 border-b border-slate-200/50">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <section className="relative z-40 bg-[#07090f] border-b border-slate-800/60 text-white pt-2.5 sm:pt-6 pb-3 sm:pb-6 px-3 sm:px-6 lg:px-8 shadow-2xl overflow-visible">
+
+      {/* ─── DECORATIVE BACKGROUND SYSTEM (Clipped inside overflow-hidden wrapper) ─── */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {/* LAYER 2 — Atmospheric City Lighting */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{
+            background: [
+              'radial-gradient(ellipse 70% 55% at 18% 0%, rgba(37,58,110,0.22) 0%, transparent 70%)',
+              'radial-gradient(ellipse 55% 50% at 88% 15%, rgba(15,60,50,0.18) 0%, transparent 65%)',
+              'radial-gradient(ellipse 40% 30% at 52% 40%, rgba(22,28,40,0.30) 0%, transparent 100%)',
+            ].join(', '),
+          }}
+        />
+
+        {/* LAYER 3 — Abstract Urban Geometry (Desktop SVG) */}
+        <svg
+          aria-hidden="true"
+          className="absolute inset-0 z-[1] pointer-events-none hidden sm:block"
+          viewBox="0 0 1440 260"
+          preserveAspectRatio="xMidYMid slice"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ width: '100%', height: '100%' }}
+        >
+          <defs>
+            <linearGradient id="streak-a" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#8bb4d4" stopOpacity="0" />
+              <stop offset="40%" stopColor="#8bb4d4" stopOpacity="0.07" />
+              <stop offset="70%" stopColor="#a8c8e0" stopOpacity="0.04" />
+              <stop offset="100%" stopColor="#8bb4d4" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="streak-b" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#7ec8b0" stopOpacity="0" />
+              <stop offset="35%" stopColor="#7ec8b0" stopOpacity="0.055" />
+              <stop offset="65%" stopColor="#7ec8b0" stopOpacity="0.03" />
+              <stop offset="100%" stopColor="#7ec8b0" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="streak-c" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#6090c0" stopOpacity="0" />
+              <stop offset="50%" stopColor="#6090c0" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="#6090c0" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="arch-fade" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#a0bcd8" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#a0bcd8" stopOpacity="0" />
+            </linearGradient>
+            <radialGradient id="city-light-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#c8e0f0" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="#c8e0f0" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="city-light-warm" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#d4e8b0" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#d4e8b0" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+
+          <line x1="-60" y1="68" x2="780" y2="58" stroke="url(#streak-a)" strokeWidth="1" />
+          <line x1="200" y1="108" x2="1100" y2="95" stroke="url(#streak-b)" strokeWidth="0.8" />
+          <line x1="480" y1="148" x2="1480" y2="132" stroke="url(#streak-a)" strokeWidth="0.7" />
+          <line x1="820" y1="42" x2="1440" y2="28" stroke="url(#streak-c)" strokeWidth="0.6" />
+          <line x1="900" y1="185" x2="1440" y2="175" stroke="url(#streak-b)" strokeWidth="0.5" />
+
+          <rect x="62"  y="0" width="1" height="88"  fill="url(#arch-fade)" />
+          <rect x="78"  y="0" width="1" height="110" fill="url(#arch-fade)" opacity="0.7" />
+          <rect x="91"  y="0" width="1" height="72"  fill="url(#arch-fade)" opacity="0.55" />
+          <rect x="105" y="0" width="1" height="130" fill="url(#arch-fade)" opacity="0.8" />
+          <rect x="118" y="0" width="1" height="95"  fill="url(#arch-fade)" opacity="0.6" />
+          <rect x="132" y="0" width="1" height="60"  fill="url(#arch-fade)" opacity="0.45" />
+
+          <rect x="1280" y="0" width="1" height="100" fill="url(#arch-fade)" opacity="0.5" />
+          <rect x="1295" y="0" width="1" height="140" fill="url(#arch-fade)" opacity="0.65" />
+          <rect x="1308" y="0" width="1" height="80"  fill="url(#arch-fade)" opacity="0.45" />
+          <rect x="1322" y="0" width="1" height="115" fill="url(#arch-fade)" opacity="0.55" />
+          <rect x="1337" y="0" width="1" height="70"  fill="url(#arch-fade)" opacity="0.4" />
+          <rect x="1352" y="0" width="1" height="90"  fill="url(#arch-fade)" opacity="0.5" />
+
+          <line x1="0"    y1="260" x2="720" y2="160" stroke="#3a5070" strokeWidth="0.5" strokeOpacity="0.12" />
+          <line x1="240"  y1="260" x2="720" y2="160" stroke="#3a5070" strokeWidth="0.5" strokeOpacity="0.10" />
+          <line x1="1440" y1="260" x2="720" y2="160" stroke="#3a5070" strokeWidth="0.5" strokeOpacity="0.12" />
+          <line x1="1200" y1="260" x2="720" y2="160" stroke="#3a5070" strokeWidth="0.5" strokeOpacity="0.10" />
+          <line x1="0" y1="220" x2="1440" y2="220" stroke="#2a3d54" strokeWidth="0.4" strokeOpacity="0.08" />
+          <line x1="0" y1="195" x2="1440" y2="195" stroke="#2a3d54" strokeWidth="0.4" strokeOpacity="0.06" />
+          <line x1="0" y1="178" x2="1440" y2="178" stroke="#2a3d54" strokeWidth="0.3" strokeOpacity="0.05" />
+
+          <circle cx="44"  cy="34"  r="1"   fill="#c0d8ec" fillOpacity="0.25" />
+          <circle cx="158" cy="18"  r="0.8" fill="#c0d8ec" fillOpacity="0.18" />
+          <circle cx="38"  cy="58"  r="0.7" fill="#b0cce0" fillOpacity="0.15" />
+          <circle cx="175" cy="42"  r="1"   fill="#bcd8e8" fillOpacity="0.20" />
+          <circle cx="22"  cy="80"  r="0.8" fill="#a8cce0" fillOpacity="0.12" />
+          <circle cx="195" cy="78"  r="0.7" fill="#c0d8ec" fillOpacity="0.14" />
+
+          <circle cx="340" cy="28"  r="0.8" fill="#c0d8ec" fillOpacity="0.14" />
+          <circle cx="390" cy="54"  r="0.7" fill="#b8d4e8" fillOpacity="0.12" />
+          <circle cx="310" cy="72"  r="1"   fill="#c4daf0" fillOpacity="0.16" />
+
+          <circle cx="1240" cy="22"  r="0.8" fill="#c0d8ec" fillOpacity="0.18" />
+          <circle cx="1380" cy="38"  r="1"   fill="#c0d8ec" fillOpacity="0.22" />
+          <circle cx="1260" cy="54"  r="0.7" fill="#b0cce0" fillOpacity="0.14" />
+          <circle cx="1400" cy="60"  r="0.8" fill="#bcd8e8" fillOpacity="0.16" />
+          <circle cx="1220" cy="78"  r="1"   fill="#c0d8ec" fillOpacity="0.20" />
+          <circle cx="1420" cy="85"  r="0.7" fill="#a8cce0" fillOpacity="0.12" />
+          <circle cx="1360" cy="18"  r="0.8" fill="#c4daf0" fillOpacity="0.15" />
+
+          <circle cx="1060" cy="32"  r="0.8" fill="#c0d8ec" fillOpacity="0.12" />
+          <circle cx="1100" cy="60"  r="0.7" fill="#b8d4e8" fillOpacity="0.10" />
+
+          <circle cx="88"  cy="26"  r="1.2" fill="#d4e8b0" fillOpacity="0.18" />
+          <circle cx="1312" cy="30" r="1.2" fill="#d4e8b0" fillOpacity="0.16" />
+          <circle cx="420" cy="38"  r="1"   fill="#cce4a8" fillOpacity="0.12" />
+          <circle cx="1140" cy="45" r="1"   fill="#cce4a8" fillOpacity="0.12" />
+
+          <circle cx="88"  cy="26"  r="6" fill="url(#city-light-warm)" />
+          <circle cx="1312" cy="30" r="6" fill="url(#city-light-warm)" />
+          <circle cx="175" cy="42"  r="5" fill="url(#city-light-glow)" />
+          <circle cx="1380" cy="38" r="5" fill="url(#city-light-glow)" />
+        </svg>
+
+        {/* Mobile geometry SVG */}
+        <svg
+          aria-hidden="true"
+          className="absolute inset-0 z-[1] pointer-events-none sm:hidden"
+          viewBox="0 0 390 240"
+          preserveAspectRatio="xMidYMid slice"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ width: '100%', height: '100%' }}
+        >
+          <defs>
+            <linearGradient id="m-streak" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#8bb4d4" stopOpacity="0" />
+              <stop offset="50%" stopColor="#8bb4d4" stopOpacity="0.06" />
+              <stop offset="100%" stopColor="#8bb4d4" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="m-arch" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#a0bcd8" stopOpacity="0.10" />
+              <stop offset="100%" stopColor="#a0bcd8" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <line x1="-20" y1="55" x2="280" y2="48" stroke="url(#m-streak)" strokeWidth="0.8" />
+          <line x1="60"  y1="95" x2="420" y2="85" stroke="url(#m-streak)" strokeWidth="0.6" />
+          <rect x="18" y="0" width="1" height="70"  fill="url(#m-arch)" opacity="0.8" />
+          <rect x="30" y="0" width="1" height="90"  fill="url(#m-arch)" opacity="0.6" />
+          <rect x="42" y="0" width="1" height="55"  fill="url(#m-arch)" opacity="0.5" />
+          <rect x="348" y="0" width="1" height="80"  fill="url(#m-arch)" opacity="0.6" />
+          <rect x="362" y="0" width="1" height="60"  fill="url(#m-arch)" opacity="0.5" />
+          <circle cx="24"  cy="22" r="0.8" fill="#c0d8ec" fillOpacity="0.22" />
+          <circle cx="55"  cy="14" r="0.7" fill="#d4e8b0" fillOpacity="0.18" />
+          <circle cx="355" cy="18" r="0.8" fill="#c0d8ec" fillOpacity="0.20" />
+          <circle cx="372" cy="32" r="0.7" fill="#d4e8b0" fillOpacity="0.16" />
+        </svg>
+
+        {/* LAYER 4 — Focal Glow */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-[2] pointer-events-none"
+          style={{
+            background: [
+              'radial-gradient(ellipse 52% 38% at 50% 12%, rgba(10,44,38,0.28) 0%, transparent 100%)',
+              'radial-gradient(ellipse 38% 28% at 38% 18%, rgba(14,32,68,0.22) 0%, transparent 100%)',
+            ].join(', '),
+          }}
+        />
+
+        {/* LAYER 6 — Bottom Edge Transition */}
+        <div
+          aria-hidden="true"
+          className="absolute bottom-0 left-0 right-0 z-[3] h-8 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to bottom, transparent 0%, rgba(7,9,15,0.55) 100%)',
+          }}
+        />
+      </div>
+
+
+      <div className="relative z-10 max-w-5xl mx-auto space-y-2.5 sm:space-y-4">
         
-        {/* Headline */}
-        <div className="text-center space-y-3">
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15] max-w-3xl mx-auto">
-            Find activities that fit your free time.
+        {/* Headline & Subtitle */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center space-y-1 max-w-3xl mx-auto px-2"
+        >
+          <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-900 text-slate-300 text-[10px] sm:text-[11px] font-bold border border-slate-800 shadow-2xs">
+            <Sparkles className="w-3 h-3 text-[#A2FF00]" />
+            <span>Activity Discovery • Moscow Metro</span>
+          </div>
+
+          <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-snug px-3">
+            Find something worth doing in Moscow.
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto font-normal leading-relaxed">
-            Discover courses, classes, workshops, sports, events and camps near your metro station.
-          </p>
-        </div>
+          <motion.p
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[11px] sm:text-xs md:text-sm text-slate-400 font-normal max-w-lg mx-auto leading-relaxed px-2"
+          >
+            Find classes, sports, workshops and experiences across Moscow's metro network.
+          </motion.p>
+        </motion.div>
 
-        {/* Format Toggle Tabs: offline | online */}
-        <div className="flex items-center justify-center -mb-2 z-10 relative">
-          <div className="inline-flex items-center p-1 bg-white/90 backdrop-blur-md rounded-2xl md:rounded-full border border-slate-200/90 shadow-md shadow-slate-900/5 gap-1">
-            <button
-              type="button"
-              onClick={() => handleDeliveryModeChange('In Person')}
-              className={`relative flex items-center space-x-2 px-6 py-2 rounded-xl md:rounded-full text-sm font-extrabold transition-all cursor-pointer ${
-                selectedDeliveryMode === 'In Person' || selectedDeliveryMode === 'All'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/80'
-              }`}
-            >
-              <MapPin className="w-4 h-4" />
-              <span>Offline</span>
-              {(selectedDeliveryMode === 'In Person' || selectedDeliveryMode === 'All') && (
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#074213] rounded-full" />
-              )}
-            </button>
-
-            <span className="text-slate-300 font-light select-none px-1">|</span>
-
-            <button
-              type="button"
-              onClick={() => handleDeliveryModeChange('Live Online')}
-              className={`relative flex items-center space-x-2 px-6 py-2 rounded-xl md:rounded-full text-sm font-extrabold transition-all cursor-pointer ${
-                selectedDeliveryMode === 'Live Online'
-                  ? 'bg-[#074213] text-white shadow-sm'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/80'
-              }`}
-            >
-              <Globe className="w-4 h-4" />
-              <span>Online</span>
-              {selectedDeliveryMode === 'Live Online' && (
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#A2FF00] rounded-full" />
-              )}
-            </button>
+        {/* ONE COHESIVE LIGHT SEARCH SURFACE PANEL */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-20 bg-slate-50 rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-2xl shadow-black/40 space-y-2.5 sm:space-y-3"
+        >
+          
+          {/* ROW 1: ACTIVITY SEARCH (WHAT) */}
+          <div className="relative z-30">
+            <SearchAutocomplete
+              value={searchKeyword}
+              onChange={(val) => setSearchKeyword(val)}
+              onSearch={(kw) => executeSearch({ searchKeyword: kw }, true)}
+              activities={activities}
+            />
           </div>
-        </div>
 
-        {/* ONE Premium Search Container */}
-        <form onSubmit={handleExecuteSearch} className="relative">
-          <div className="bg-white rounded-2xl md:rounded-full p-2.5 md:p-3 border border-slate-200/90 shadow-xl shadow-slate-900/5 hover:shadow-2xl transition-all">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-              
-              {/* 1. Category (optional) */}
-              <div className="md:w-1/4 px-4 py-2 hover:bg-slate-50/70 rounded-xl md:rounded-l-full transition-colors">
-                <label className="text-[10px] font-bold tracking-wider uppercase text-slate-400 block mb-1">
-                  1. Category
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value as Category)}
-                  className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-900 outline-none cursor-pointer border-none p-0 focus:ring-0 truncate"
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat === 'All Categories' ? 'All Categories (Optional)' : cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* 2. Metro Line */}
-              <div className="md:w-1/5 px-4 py-2 hover:bg-slate-50/70 rounded-xl transition-colors">
-                <label className="text-[10px] font-bold tracking-wider uppercase text-slate-400 block mb-1">
-                  2. Metro Line
-                </label>
-                <select
-                  value={selectedMetroLine}
-                  onChange={(e) => {
-                    setSelectedMetroLine(e.target.value);
-                    setSelectedStationIds([]);
-                  }}
-                  className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-900 outline-none cursor-pointer border-none p-0 focus:ring-0 truncate"
-                >
-                  <option value="all">All Lines</option>
-                  {METRO_LINES.map((line) => (
-                    <option key={line.id} value={line.id}>
-                      {line.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* 3. Metro Station — shown when a line is selected */}
-              {selectedMetroLine !== 'all' && (() => {
-                const stationsForLine = METRO_STATIONS.filter(s => s.lineId === selectedMetroLine);
-                return (
-                  <div className="md:w-1/5 px-4 py-2 hover:bg-slate-50/70 rounded-xl transition-colors">
-                    <label className="text-[10px] font-bold tracking-wider uppercase text-slate-400 block mb-1">
-                      3. Station
-                    </label>
-                    <select
-                      value={selectedStationIds[0] ?? ''}
-                      onChange={(e) =>
-                        setSelectedStationIds(e.target.value ? [e.target.value] : [])
-                      }
-                      className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-900 outline-none cursor-pointer border-none p-0 focus:ring-0 truncate"
-                    >
-                      <option value="">All Stations</option>
-                      {stationsForLine.map((station) => (
-                        <option key={station.id} value={station.id}>
-                          {station.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              })()}
-
-              {/* 4. Time */}
-              <div className="md:w-1/5 px-4 py-2 hover:bg-slate-50/70 rounded-xl transition-colors">
-                <label className="text-[10px] font-bold tracking-wider uppercase text-slate-400 block mb-1">
-                  {selectedMetroLine !== 'all' ? '4. Time' : '3. Time'}
-                </label>
-                <div className="flex items-center gap-1">
-                  {(['Morning', 'Afternoon', 'Evening'] as TimeOfDay[]).map((slot) => {
-                    const isSelected = selectedTimeOfDay.includes(slot);
-                    return (
-                      <button
-                        type="button"
-                        key={slot}
-                        onClick={() => toggleTimeOfDay(slot)}
-                        className={`flex-1 py-1 px-1.5 text-[11px] font-semibold rounded-md transition-all text-center ${
-                          isSelected
-                            ? 'bg-slate-900 text-white shadow-xs'
-                            : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/80'
-                        }`}
-                      >
-                        {slot === 'Morning' ? 'Morn' : slot === 'Afternoon' ? 'Aft' : 'Eve'}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 5. Audience */}
-              <div className="md:w-1/5 px-4 py-2 hover:bg-slate-50/70 rounded-xl transition-colors">
-                <label className="text-[10px] font-bold tracking-wider uppercase text-slate-400 block mb-1">
-                  {selectedMetroLine !== 'all' ? '5. Audience' : '4. Audience'}
-                </label>
-                <div className="flex items-center gap-1">
-                  {(['All', 'Adults', 'Children'] as AudienceType[]).map((aud) => {
-                    const isSelected = selectedAudience === aud;
-                    return (
-                      <button
-                        type="button"
-                        key={aud}
-                        onClick={() => setSelectedAudience(aud)}
-                        className={`flex-1 py-1 px-1.5 text-[11px] font-semibold rounded-md transition-all text-center ${
-                          isSelected
-                            ? 'bg-slate-900 text-white shadow-xs'
-                            : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/80'
-                        }`}
-                      >
-                        {aud === 'Children' ? 'Kids' : aud}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 5. Search Button */}
-              <div className="p-1 md:pl-2 flex items-center justify-end">
-                <button
-                  type="submit"
-                  className="w-full md:w-auto h-12 px-7 bg-[#074213] hover:bg-[#05320e] text-white text-sm font-bold rounded-xl md:rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:shadow-lg active:scale-[0.98] shrink-0"
-                >
-                  <Search className="w-4 h-4" />
-                  <span>Search</span>
-                </button>
-              </div>
-
+          {/* ROW 2: WHO (Audience) & HOW (Attendance Mode) */}
+          <div className="hidden sm:flex items-center space-x-3 pt-0.5">
+            <div className="w-64 sm:w-72">
+              <AudienceSelector
+                selectedAudience={selectedAudience}
+                onSelectAudience={(aud) => {
+                  setSelectedAudience(aud);
+                  executeSearch({ audience: aud });
+                }}
+                layoutId="hero-audience-desktop"
+              />
+            </div>
+            <div>
+              <AttendanceModeSelector
+                selectedMode={attendanceMode}
+                onSelectMode={handleAttendanceChange}
+                layoutId="hero-attendance-desktop"
+              />
             </div>
           </div>
-        </form>
 
-        {/* Quick Filters */}
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="text-xs font-semibold text-slate-400 mr-1">Quick filters:</span>
-            {QUICK_CHIPS.map((chip) => {
-              const isActive = isChipActive(chip);
-              return (
-                <button
-                  key={chip}
-                  type="button"
-                  onClick={() => handleQuickFilter(chip)}
-                  className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all ${
-                    isActive
-                      ? 'bg-slate-900 text-white font-semibold shadow-xs'
-                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
-                  }`}
-                >
-                  {chip}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          {/* DESKTOP CONTROLS (ROW 3): Metro | Time | Search | Filters */}
+          <div className="hidden sm:grid grid-cols-12 gap-3 items-end pt-3 border-t border-slate-200/80 relative z-20">
+            {/* Metro Line → Station Selector (WHERE) */}
+            <div className="col-span-5 relative z-30">
+              {isOnlineMode ? (
+                <LanguagePopover
+                  selectedLanguage={selectedLanguage}
+                  onSelectLanguage={(lang) => {
+                    setSelectedLanguage(lang);
+                    executeSearch({ language: lang });
+                  }}
+                  label="Language"
+                />
+              ) : (
+                <MetroPopover
+                  type="combined"
+                  selectedLineId={selectedMetroLine}
+                  selectedStationIds={selectedStationIds}
+                  onSelectLine={(lineId) => setSelectedMetroLine(lineId)}
+                  onSelectStation={(stId) => {
+                    const ids = Array.isArray(stId) ? stId : [stId];
+                    setSelectedStationIds(ids);
+                  }}
+                  onCommit={(lineId, stationIds) => {
+                    setSelectedMetroLine(lineId);
+                    setSelectedStationIds(stationIds);
+                    executeSearch({ metroLineId: lineId, metroStationIds: stationIds });
+                  }}
+                  onClearStations={() => {
+                    setSelectedStationIds([]);
+                    executeSearch({ metroStationIds: [] });
+                  }}
+                  label="Metro Line → Station"
+                />
+              )}
+            </div>
 
-        {/* Secondary AI Concierge & Reset Links */}
-        <div className="flex items-center justify-center gap-4 text-xs pt-1">
-          {onOpenAiMatchmaker && (
-            <button
-              type="button"
-              onClick={onOpenAiMatchmaker}
-              className="text-slate-500 hover:text-slate-800 font-medium transition-colors flex items-center gap-1.5 opacity-80 hover:opacity-100"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>AI Matchmaker</span>
-            </button>
-          )}
-          {onOpenFreeTimePlanner && (
-            <>
-              <span className="text-slate-300">•</span>
+            {/* Time Selector (WHEN) */}
+            <div className="col-span-4 relative z-20">
+              <TimeSelectorPopover
+                selectedTimes={selectedTimeOfDay}
+                selectedDays={selectedDays}
+                onToggleTime={(t) => {
+                  toggleTimeOfDay(t);
+                  const newTimes = selectedTimeOfDay.includes(t)
+                    ? selectedTimeOfDay.filter((item) => item !== t)
+                    : [...selectedTimeOfDay, t];
+                  executeSearch({ timeOfDaySlots: newTimes });
+                }}
+                onSelectDays={(d) => {
+                  setSelectedDays(d);
+                  executeSearch({ daysOfWeek: d });
+                }}
+                label="Available Time"
+              />
+            </div>
+
+            {/* Desktop Action Buttons (SEARCH CTA & Secondary Filters) */}
+            <div className="col-span-3 relative z-10 flex items-center space-x-2">
               <button
                 type="button"
-                onClick={onOpenFreeTimePlanner}
-                className="text-slate-500 hover:text-slate-800 font-medium transition-colors flex items-center gap-1.5 opacity-80 hover:opacity-100"
+                onClick={() => executeSearch({}, true)}
+                className="flex-1 flex items-center justify-center space-x-2 px-5 py-2.5 bg-[#A2FF00] hover:bg-[#8ee600] text-[#0A0A0A] rounded-xl font-extrabold text-xs transition-all shadow-md cursor-pointer active:scale-98 min-h-[44px]"
               >
-                <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                <span>Free Time Planner</span>
+                <Search className="w-4 h-4 text-[#0A0A0A] shrink-0" />
+                <span>Search</span>
               </button>
-            </>
-          )}
-          <span className="text-slate-300">•</span>
-          <button
-            type="button"
-            onClick={handleClearAll}
-            className="text-slate-400 hover:text-slate-700 font-medium transition-colors"
-          >
-            Reset filters
-          </button>
+
+              <button
+                type="button"
+                onClick={() => setMobileSheetOpen(true)}
+                className="p-2.5 text-slate-700 hover:text-slate-950 hover:bg-slate-200/70 bg-white rounded-xl border border-slate-300 transition-colors cursor-pointer shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs"
+                title="More Filters"
+              >
+                <SlidersHorizontal className="w-4 h-4 text-[#074213]" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 bg-white rounded-xl border border-slate-300 transition-colors cursor-pointer shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs"
+                title="Reset Search Filters"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* MOBILE RECOMPOSED CONTROLS */}
+          <div className="sm:hidden space-y-3 pt-3 border-t border-slate-200/80">
+            <div>
+              <label className="text-[10px] font-bold tracking-wider uppercase text-slate-600 block mb-1">
+                Audience
+              </label>
+              <AudienceSelector
+                selectedAudience={selectedAudience}
+                onSelectAudience={(aud) => {
+                  setSelectedAudience(aud);
+                  executeSearch({ audience: aud });
+                }}
+                layoutId="hero-audience-mobile"
+              />
+            </div>
+
+            <div>
+              <AttendanceModeSelector
+                selectedMode={attendanceMode}
+                onSelectMode={handleAttendanceChange}
+                layoutId="hero-attendance-mobile"
+              />
+            </div>
+
+            {!isOnlineMode && (
+              <div>
+                <label className="text-[10px] font-bold tracking-wider uppercase text-slate-600 block mb-1">
+                  Metro Location
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setMobileMetroSheetOpen(true)}
+                  className="w-full bg-white hover:bg-slate-50 border border-slate-300 rounded-xl px-3.5 h-[56px] text-left flex items-center justify-between transition-colors shadow-xs cursor-pointer active:bg-slate-100"
+                >
+                  <div className="flex items-center space-x-2.5 min-w-0">
+                    <div
+                      className="w-3 h-3 rounded-full shrink-0 border border-slate-900/20 shadow-xs"
+                      style={{
+                        backgroundColor:
+                          selectedMetroLine !== 'all'
+                            ? METRO_LINES.find((l) => l.id === selectedMetroLine)?.color || '#EF4444'
+                            : '#A2FF00',
+                      }}
+                    />
+                    <span className="text-xs font-bold text-slate-900 truncate">
+                      {selectedStationIds.length > 0
+                        ? `${METRO_LINES.find((l) => l.id === selectedMetroLine)?.name.split(':')[1]?.trim() || ''} · ${
+                            selectedStationIds.length === 1
+                              ? METRO_STATIONS.find((s) => s.id === selectedStationIds[0])?.name || '1 Station'
+                              : `${selectedStationIds.length} Stations`
+                          }`
+                        : selectedMetroLine !== 'all'
+                        ? `${METRO_LINES.find((l) => l.id === selectedMetroLine)?.name.split(':')[1]?.trim() || ''} → Choose Station`
+                        : 'Metro Line → Station'}
+                    </span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-500 shrink-0 ml-2" />
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => executeSearch({}, true)}
+              className="w-full flex items-center justify-center space-x-2 h-[56px] bg-[#A2FF00] hover:bg-[#8ee600] text-[#0A0A0A] rounded-xl font-extrabold text-sm transition-all shadow-md cursor-pointer active:scale-98"
+            >
+              <Search className="w-4 h-4 text-[#0A0A0A] shrink-0" />
+              <span>Search Activities</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMobileSheetOpen(true)}
+              className="w-full h-[48px] bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-950 rounded-xl font-semibold text-xs border border-slate-300 shadow-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-[#074213]" />
+              <span>More Filters</span>
+            </button>
+          </div>
+
+        </motion.div>
+
+        {/* Subordinate Quick Discovery Suggestions */}
+        <div className="pt-1">
+          <QuickDiscoveryChips
+            filters={filters}
+            onApplyFilters={onApplySearch}
+          />
         </div>
 
       </div>
+
+      {/* MOBILE METRO BOTTOM SHEET */}
+      <MobileSearchSheet
+        isOpen={mobileMetroSheetOpen}
+        onClose={() => setMobileMetroSheetOpen(false)}
+        title="Metro Line & Station"
+      >
+        <MetroPopover
+          type="combined"
+          selectedLineId={selectedMetroLine}
+          selectedStationIds={selectedStationIds}
+          onSelectLine={(lineId) => setSelectedMetroLine(lineId)}
+          onSelectStation={(stId) => {
+            const ids = Array.isArray(stId) ? stId : [stId];
+            setSelectedStationIds(ids);
+          }}
+          onCommit={(lineId, stationIds) => {
+            setSelectedMetroLine(lineId);
+            setSelectedStationIds(stationIds);
+            setMobileMetroSheetOpen(false);
+            executeSearch({ metroLineId: lineId, metroStationIds: stationIds });
+          }}
+          onClearStations={() => setSelectedStationIds([])}
+          isMobileModal
+          onCloseMobileModal={() => setMobileMetroSheetOpen(false)}
+        />
+      </MobileSearchSheet>
+
+      {/* MOBILE SECONDARY FILTERS BOTTOM SHEET */}
+      <MobileSearchSheet
+        isOpen={mobileSheetOpen}
+        onClose={() => setMobileSheetOpen(false)}
+        title="More Filters"
+        onApply={() => {
+          setMobileSheetOpen(false);
+          executeSearch({}, true);
+        }}
+      >
+        <div className="space-y-5 overflow-y-auto flex-1 min-h-0 pr-1">
+          <CategoryPopover
+            selectedCategory={selectedCategory}
+            onSelectCategory={(cat) => setSelectedCategory(cat)}
+            isMobileModal
+          />
+          {attendanceMode === 'Live Online' && (
+            <LanguagePopover
+              selectedLanguage={selectedLanguage}
+              onSelectLanguage={(lang) => setSelectedLanguage(lang)}
+              isMobileModal
+            />
+          )}
+          <TimeSelectorPopover
+            selectedTimes={selectedTimeOfDay}
+            selectedDays={selectedDays}
+            onToggleTime={toggleTimeOfDay}
+            onSelectDays={setSelectedDays}
+            isMobileModal
+          />
+        </div>
+      </MobileSearchSheet>
     </section>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Calendar, MapPin, CheckCircle, Trash2, ExternalLink, Download, Navigation, Users, CalendarDays, Clock, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Booking } from '../types';
 
 interface MyBookingsModalProps {
@@ -17,8 +18,6 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
 }) => {
   const [selectedDirectionBooking, setSelectedDirectionBooking] = useState<Booking | null>(null);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
-
-  if (!isOpen) return null;
 
   const generateGoogleCalendarUrl = (b: Booking) => {
     const title = encodeURIComponent(`Trial Class: ${b.activityTitle}`);
@@ -60,8 +59,25 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4" style={{ animation: 'fadeIn .2s ease-out' }}>
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200/70 overflow-hidden flex flex-col max-h-[90vh]">
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
+          />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 4 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200/70 overflow-hidden flex flex-col max-h-[90vh]"
+          >
 
         {/* ── Modal Header ── */}
         <div className="px-5 py-4 bg-white border-b border-slate-200/70 flex items-center justify-between shrink-0">
@@ -218,7 +234,9 @@ export const MyBookingsModal: React.FC<MyBookingsModalProps> = ({
           </div>
         )}
 
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
