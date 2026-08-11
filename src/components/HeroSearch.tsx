@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Sparkles, Calendar } from 'lucide-react';
-import { Category, AudienceType, TimeOfDay, DayOfWeek, FilterState, GoalType } from '../types';
+import { Search, Sparkles, Calendar, MapPin, Globe } from 'lucide-react';
+import { Category, AudienceType, TimeOfDay, DayOfWeek, FilterState, GoalType, DeliveryFilter } from '../types';
 import { CATEGORIES } from '../data/activitiesData';
 import { METRO_LINES, METRO_STATIONS } from '../data/metroData';
 
@@ -32,6 +32,7 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
   onOpenFreeTimePlanner,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<Category>(filters.category);
+  const [selectedDeliveryMode, setSelectedDeliveryMode] = useState<DeliveryFilter>(filters.deliveryMode || 'In Person');
   const [selectedMetroLine, setSelectedMetroLine] = useState<string>(filters.metroLineId);
   const [selectedStationIds, setSelectedStationIds] = useState<string[]>(filters.metroStationIds);
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(filters.daysOfWeek);
@@ -42,6 +43,7 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
 
   React.useEffect(() => {
     setSelectedCategory(filters.category);
+    setSelectedDeliveryMode(filters.deliveryMode || 'In Person');
     setSelectedMetroLine(filters.metroLineId);
     setSelectedStationIds(filters.metroStationIds);
     setSelectedDays(filters.daysOfWeek);
@@ -59,10 +61,26 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
     }
   };
 
+  const handleDeliveryModeChange = (mode: DeliveryFilter) => {
+    setSelectedDeliveryMode(mode);
+    onApplySearch({
+      category: selectedCategory,
+      deliveryMode: mode,
+      metroLineId: selectedMetroLine,
+      metroStationIds: selectedStationIds,
+      daysOfWeek: selectedDays,
+      timeOfDaySlots: selectedTimeOfDay,
+      audience: selectedAudience,
+      goal: selectedGoal,
+      searchKeyword: searchKeyword,
+    });
+  };
+
   const handleExecuteSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     onApplySearch({
       category: selectedCategory,
+      deliveryMode: selectedDeliveryMode,
       metroLineId: selectedMetroLine,
       metroStationIds: selectedStationIds,
       daysOfWeek: selectedDays,
@@ -75,6 +93,7 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
 
   const handleClearAll = () => {
     setSelectedCategory('All Categories');
+    setSelectedDeliveryMode('In Person');
     setSelectedMetroLine('all');
     setSelectedStationIds([]);
     setSelectedDays([]);
@@ -84,6 +103,7 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
     setSearchKeyword('');
     onApplySearch({
       category: 'All Categories',
+      deliveryMode: 'In Person',
       metroLineId: 'all',
       metroStationIds: [],
       daysOfWeek: [],
@@ -212,6 +232,45 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
           <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto font-normal leading-relaxed">
             Discover courses, classes, workshops, sports, events and camps near your metro station.
           </p>
+        </div>
+
+        {/* Format Toggle Tabs: offline | online */}
+        <div className="flex items-center justify-center -mb-2 z-10 relative">
+          <div className="inline-flex items-center p-1 bg-white/90 backdrop-blur-md rounded-2xl md:rounded-full border border-slate-200/90 shadow-md shadow-slate-900/5 gap-1">
+            <button
+              type="button"
+              onClick={() => handleDeliveryModeChange('In Person')}
+              className={`relative flex items-center space-x-2 px-6 py-2 rounded-xl md:rounded-full text-sm font-extrabold transition-all cursor-pointer ${
+                selectedDeliveryMode === 'In Person' || selectedDeliveryMode === 'All'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/80'
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+              <span>Offline</span>
+              {(selectedDeliveryMode === 'In Person' || selectedDeliveryMode === 'All') && (
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#074213] rounded-full" />
+              )}
+            </button>
+
+            <span className="text-slate-300 font-light select-none px-1">|</span>
+
+            <button
+              type="button"
+              onClick={() => handleDeliveryModeChange('Live Online')}
+              className={`relative flex items-center space-x-2 px-6 py-2 rounded-xl md:rounded-full text-sm font-extrabold transition-all cursor-pointer ${
+                selectedDeliveryMode === 'Live Online'
+                  ? 'bg-[#074213] text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/80'
+              }`}
+            >
+              <Globe className="w-4 h-4" />
+              <span>Online</span>
+              {selectedDeliveryMode === 'Live Online' && (
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#A2FF00] rounded-full" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* ONE Premium Search Container */}

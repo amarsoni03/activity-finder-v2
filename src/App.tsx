@@ -651,13 +651,23 @@ export default function App() {
         return false;
       }
 
-      // Delivery Mode
-      if (
-        filters.deliveryMode &&
-        filters.deliveryMode !== 'All' &&
-        act.deliveryMode !== filters.deliveryMode
-      ) {
-        return false;
+      // Delivery Mode (Offline vs Online)
+      if (filters.deliveryMode && filters.deliveryMode !== 'All') {
+        if (filters.deliveryMode === 'In Person') {
+          if (act.deliveryMode !== 'In Person' && act.deliveryMode !== 'Hybrid') {
+            return false;
+          }
+        } else if (filters.deliveryMode === 'Live Online') {
+          if (
+            act.deliveryMode !== 'Live Online' &&
+            act.deliveryMode !== 'Self-Paced' &&
+            act.deliveryMode !== 'Hybrid'
+          ) {
+            return false;
+          }
+        } else if (act.deliveryMode !== filters.deliveryMode) {
+          return false;
+        }
       }
 
       // Language Filter

@@ -7,3 +7,5 @@ Follow [PRODUCT_CONSTITUTION.md](file:///Users/amar/Documents/Activity%20Finder/
 - Homepage presents primary search: Category (optional) -> Metro -> Available Time -> Results.
 - Activity cards prioritize activity details: Title, Category, Schedule, Start Date, Frequency, Metro Station, Walk Time, Level, Price, Rating, Short Description, and Reserve Spot CTA.
 - Studio/Teacher information remains secondary on cards and primary only on Activity Details page.
+- **No Automatic Git Commits/Pushes**: Do NOT automatically execute `git commit` or `git push`. Only perform git commits/pushes when explicitly requested by the user.
+

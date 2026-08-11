@@ -1,70 +1,35 @@
-import { GoogleGenAI } from '@google/genai';
 import { Activity, AiMatchResult } from '../types';
 
 export async function findAiMatches(
   userQuery: string,
   activities: Activity[]
 ): Promise<AiMatchResult[]> {
-  const apiKey =
-    (import.meta as any).env?.VITE_GEMINI_API_KEY ||
-    (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
+  try {
+    const res = await fetch('/api/ai-match', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userQuery, activities }),
+    });
 
-  if (apiKey) {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
-      const prompt = `You are an AI activity concierge for Moscow Activity Finder (Moscow City, Russia).
-The user is looking for courses in Moscow: "${userQuery}"
-
-Here is the JSON catalog of available Moscow activities:
-${JSON.stringify(
-  activities.map((a) => ({
-    id: a.id,
-    title: a.title,
-    category: a.category,
-    subSkill: a.subSkill,
-    audience: a.audience,
-    metroStationName: a.metroStationName,
-    metroLineName: a.metroLineName,
-    walkMinutes: a.walkMinutes,
-    price: a.price,
-    priceFormatted: `${a.price.toLocaleString('ru-RU')} ₽`,
-    level: a.level,
-    days: a.schedule.days,
-    timeOfDay: a.schedule.timeOfDay,
-    description: a.shortDescription,
-  })),
-  null,
-  2
-)}
-
-Analyze the user's intent (schedule, Moscow metro location/line, interest, budget in ₽ Rubles, audience).
-Return a JSON array of up to 4 best matching items. ONLY return valid raw JSON array without markdown formatting.
-Each object must have:
-- "activityId": string (matches catalog id)
-- "matchPercentage": number between 70 and 99
-- "reason": string (1-2 sentences explaining why this class matches the user's need in Moscow)
-- "highlights": array of 2-3 short strings (e.g. ["Near Arbatskaya", "Under 2,500 ₽", "Beginner Friendly"])
-`;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const text = response.text || '';
-      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(cleanJson);
+    if (res.ok) {
+      const parsed = await res.json();
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
       }
-    } catch (err) {
-      console.warn('Gemini API call failed, falling back to smart local matcher:', err);
+    } else {
+      const errJson = await res.json().catch(() => ({}));
+      console.warn('Server AI endpoint error, using smart fallback:', errJson.error || res.statusText);
     }
+  } catch (err) {
+    console.warn('AI service network/server error, falling back to smart local matcher:', err);
   }
 
-  // Fallback intelligent matching engine if API key is not present or call fails
+  // Fallback intelligent matching engine if API key is not set on server or call fails
   return fallbackSmartMatch(userQuery, activities);
 }
+
 
 function fallbackSmartMatch(userQuery: string, activities: Activity[]): AiMatchResult[] {
   const queryLower = userQuery.toLowerCase();
