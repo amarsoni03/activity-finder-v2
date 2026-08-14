@@ -53,10 +53,28 @@ export const ActivityMessagingModal: React.FC<ActivityMessagingModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useDialogFocus(isOpen, onClose);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [conversations, selectedThreadId]);
+    if (isOpen) {
+      if (initialThreadId) {
+        setSelectedThreadId(initialThreadId);
+        setView('thread');
+      } else if (activity) {
+        setSelectedThreadId(null);
+        setView('thread');
+      } else {
+        setSelectedThreadId(null);
+        setView(conversations.length > 0 ? 'inbox' : 'thread');
+      }
+    }
+  }, [isOpen, activity, initialThreadId, conversations.length]);
+
+  useEffect(() => {
+    if (isOpen && view === 'thread') {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [conversations, selectedThreadId, isOpen, view]);
 
   if (!isOpen) return null;
 
@@ -369,7 +387,6 @@ export const ActivityMessagingModal: React.FC<ActivityMessagingModalProps> = ({
 
   /* ────────────────────────────── MODAL SHELL ─────────────────────────── */
   const showBackButton = view === 'thread' && conversations.length > 0 && !activity;
-  const dialogRef = useDialogFocus(isOpen, onClose);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/40 backdrop-blur-xs" style={{ animation: 'fadeIn .15s ease-out' }}>

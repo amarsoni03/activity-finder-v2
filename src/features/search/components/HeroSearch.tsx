@@ -128,7 +128,10 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
   };
 
   return (
-    <section className="relative z-40 bg-[#07090f] border-b border-slate-800/60 text-white pt-2.5 sm:pt-6 pb-3 sm:pb-6 px-3 sm:px-6 lg:px-8 shadow-2xl overflow-visible">
+    <section
+      id="hero-search-section"
+      className="relative z-40 bg-[#07090f] border-b border-slate-800/60 text-white pt-2.5 sm:pt-6 pb-3 sm:pb-6 px-3 sm:px-6 lg:px-8 shadow-2xl overflow-visible"
+    >
       {/* Decorative City Atmosphere Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div

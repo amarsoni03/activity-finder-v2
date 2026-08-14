@@ -88,6 +88,36 @@ export function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  // 7. Mobile Sticky Nav Visibility (Hidden in Search & Hero section, visible after scrolling past it)
+  const [isMobileNavVisible, setIsMobileNavVisible] = useState(false);
+
+  useEffect(() => {
+    // If not on explore / home page (e.g. detail page or other tabs), always show nav
+    if (selectedActivityId || activeNavTab !== 'explore') {
+      setIsMobileNavVisible(true);
+      return;
+    }
+
+    const checkHeroVisibility = () => {
+      const heroEl = document.getElementById('hero-search-section');
+      if (!heroEl) {
+        setIsMobileNavVisible(window.scrollY > 200);
+        return;
+      }
+      const rect = heroEl.getBoundingClientRect();
+      // Hero & search section is scrolled through when its bottom reaches near the header (<= 70px)
+      setIsMobileNavVisible(rect.bottom <= 70);
+    };
+
+    checkHeroVisibility();
+    window.addEventListener('scroll', checkHeroVisibility, { passive: true });
+    window.addEventListener('resize', checkHeroVisibility, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', checkHeroVisibility);
+      window.removeEventListener('resize', checkHeroVisibility);
+    };
+  }, [selectedActivityId, activeNavTab]);
+
   // Hash-based detail page routing (#activity/<activityId>)
   useEffect(() => {
     const handleHashChange = () => {
@@ -208,7 +238,7 @@ export function App() {
         onOpenSaved={() => setIsSavedModalOpen(true)}
         onOpenBookings={() => setIsBookingsModalOpen(true)}
         onOpenMessages={() => {
-          setMessagingActivity(activeSelectedActivity || activities[0]);
+          setMessagingActivity(activeSelectedActivity || null);
           setIsMessagingModalOpen(true);
         }}
         onOpenCreate={() => {
@@ -378,6 +408,7 @@ export function App() {
           }
         }}
         savedCount={savedIds.length}
+        isVisible={isMobileNavVisible}
       />
 
       {/* 5. Mobile Filters Drawer Modal */}
@@ -417,17 +448,15 @@ export function App() {
       />
 
       {/* 8. Activity Messaging Modal */}
-      {messagingActivity && (
-        <ActivityMessagingModal
-          isOpen={isMessagingModalOpen}
-          onClose={() => setIsMessagingModalOpen(false)}
-          activity={messagingActivity}
-          conversations={conversations}
-          onSendMessage={(activityId, text, attachments, topic) => {
-            sendMessage(activityId, text, attachments, topic);
-          }}
-        />
-      )}
+      <ActivityMessagingModal
+        isOpen={isMessagingModalOpen}
+        onClose={() => setIsMessagingModalOpen(false)}
+        activity={messagingActivity}
+        conversations={conversations}
+        onSendMessage={(activityId, text, attachments, topic) => {
+          sendMessage(activityId, text, attachments, topic);
+        }}
+      />
 
       {/* 9. Create / Edit Activity Modal */}
       <CreateActivityModal

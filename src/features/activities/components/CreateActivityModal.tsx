@@ -102,8 +102,6 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
   onAddActivity,
   activityToEdit,
 }) => {
-  if (isOpen === false) return null;
-
   const handleClose = () => {
     if (onClose) onClose();
     if (onBack) onBack();

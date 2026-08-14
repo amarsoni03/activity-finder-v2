@@ -5,12 +5,14 @@ interface MobileStickyNavProps {
   activeTab: 'explore' | 'saved' | 'my-week' | 'profile';
   onSelectTab: (tab: 'explore' | 'saved' | 'my-week' | 'profile') => void;
   savedCount?: number;
+  isVisible?: boolean;
 }
 
 export const MobileStickyNav: React.FC<MobileStickyNavProps> = ({
   activeTab,
   onSelectTab,
   savedCount = 0,
+  isVisible = true,
 }) => {
   const tabs: { id: 'explore' | 'saved' | 'my-week' | 'profile'; label: string; icon: React.ElementType }[] = [
     { id: 'explore', label: 'Explore', icon: Compass },
@@ -20,7 +22,11 @@ export const MobileStickyNav: React.FC<MobileStickyNavProps> = ({
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 px-4 py-2 shadow-lg">
+    <div
+      className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 px-4 py-2 shadow-lg transition-all duration-300 ease-in-out transform ${
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
+      }`}
+    >
       <div className="flex items-center justify-around max-w-md mx-auto">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
