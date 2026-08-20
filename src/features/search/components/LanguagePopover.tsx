@@ -54,7 +54,7 @@ export const LanguagePopover: React.FC<LanguagePopoverProps> = ({
   if (isMobileModal) {
     return (
       <div className="space-y-2.5">
-        <label className="text-[11px] font-bold tracking-wider uppercase block text-slate-700">
+        <label className="text-[11px] font-bold tracking-wider uppercase block text-slate-300">
           {label}
         </label>
         <div className="relative">
@@ -66,7 +66,7 @@ export const LanguagePopover: React.FC<LanguagePopoverProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search language..."
-            className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#A2FF00] focus:border-[#A2FF00] bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 transition-colors min-h-[44px]"
+            className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#A2FF00] focus:border-[#A2FF00] bg-slate-950/80 border border-slate-700 text-white placeholder:text-slate-400 transition-colors min-h-[44px]"
           />
         </div>
         <div className="space-y-1.5">
@@ -80,7 +80,7 @@ export const LanguagePopover: React.FC<LanguagePopoverProps> = ({
                 className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer border min-h-[44px] ${
                   isSelected
                     ? 'bg-[#A2FF00] text-slate-950 font-bold border-[#8ee600]/40 shadow-xs'
-                    : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200/80 hover:text-slate-950'
+                    : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-750 hover:text-white'
                 }`}
               >
                 <div className="flex items-center space-x-3">
@@ -98,24 +98,26 @@ export const LanguagePopover: React.FC<LanguagePopoverProps> = ({
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <label className="text-[11px] font-bold tracking-wider uppercase block mb-1 text-slate-700">
+      <label className="text-[11px] font-bold tracking-wider uppercase block mb-1 text-slate-300">
         {label}
       </label>
 
       <button
         type="button"
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-white hover:bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-left flex items-center justify-between transition-all cursor-pointer shadow-xs group min-h-[44px]"
+        className="w-full bg-slate-950/80 hover:bg-slate-800 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-left flex items-center justify-between transition-all cursor-pointer shadow-xs group min-h-[44px]"
       >
         <div className="flex items-center space-x-2.5 min-w-0">
           <span className="text-base shrink-0">{selectedObj.icon}</span>
-          <span className="text-sm font-bold text-slate-900 truncate">
+          <span className="text-sm font-bold text-white truncate">
             {selectedObj.label}
           </span>
         </div>
         <ChevronDown
-          className={`w-4 h-4 text-slate-500 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-slate-900' : 'group-hover:text-slate-700'
+          className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-white' : 'group-hover:text-slate-200'
           }`}
         />
       </button>
@@ -127,7 +129,7 @@ export const LanguagePopover: React.FC<LanguagePopoverProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: -2 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute left-0 top-full mt-1.5 w-full sm:w-72 rounded-2xl shadow-2xl z-50 p-3 overflow-hidden bg-white border border-slate-200 text-slate-900"
+            className="absolute left-0 top-full mt-1.5 w-full sm:w-72 rounded-2xl shadow-2xl z-50 p-3 overflow-hidden bg-slate-900 border border-slate-700/90 text-white"
           >
             {/* Search Input Box */}
             <div className="relative mb-2">
@@ -138,7 +140,7 @@ export const LanguagePopover: React.FC<LanguagePopoverProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search language..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#A2FF00]/30 focus:border-[#A2FF00] bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400"
+                className="w-full pl-9 pr-3 py-2 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#A2FF00]/40 focus:border-[#A2FF00] bg-slate-950 border border-slate-700 text-white placeholder-slate-400"
               />
             </div>
 
@@ -156,7 +158,7 @@ export const LanguagePopover: React.FC<LanguagePopoverProps> = ({
                     className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
                       isSelected
                         ? 'bg-[#A2FF00] text-[#0A0A0A] font-bold shadow-xs'
-                        : 'text-[#475569] hover:bg-slate-100 hover:text-slate-900'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
                   >
                     <div className="flex items-center space-x-2.5">

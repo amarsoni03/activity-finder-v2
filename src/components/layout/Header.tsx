@@ -14,13 +14,11 @@ import {
   Check,
   Building2,
   MessageSquare,
+  Lock,
 } from 'lucide-react';
-import { AudienceType } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface HeaderProps {
-  currentAudience?: AudienceType;
-  onAudienceChange?: (audience: AudienceType) => void;
   savedCount: number;
   bookingsCount: number;
   messagesCount?: number;
@@ -30,10 +28,9 @@ interface HeaderProps {
   onOpenCreate: () => void;
   onOpenAiMatchmaker: () => void;
   onOpenFreeTimePlanner: () => void;
-  activeView?: 'list' | 'map' | 'schedule';
-  onViewChange?: (view: 'list' | 'map' | 'schedule') => void;
   onSearchClick?: () => void;
   onGoHome?: () => void;
+  onLockSite?: () => void;
   showSearch?: boolean;
   activeNavTab?: 'my-week' | 'explore' | 'free-time' | 'user-dashboard' | 'provider-dashboard';
   onNavTabChange?: (tab: 'my-week' | 'explore' | 'free-time' | 'user-dashboard' | 'provider-dashboard') => void;
@@ -51,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenFreeTimePlanner,
   onSearchClick,
   onGoHome,
+  onLockSite,
   showSearch = false,
   activeNavTab = 'my-week',
   onNavTabChange,
@@ -104,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({
                 M
               </div>
               <span className="text-sm sm:text-lg font-extrabold tracking-tight text-slate-900 leading-tight truncate max-w-[9rem] sm:max-w-none">
-                ActivityFirst <span className="text-[#074213] font-extrabold">Moscow</span>
+                ActivityFirst <span className="text-slate-700 font-extrabold">Moscow</span>
               </span>
             </motion.div>
 
@@ -276,6 +274,19 @@ export const Header: React.FC<HeaderProps> = ({
                     <Clock className="w-4 h-4 text-slate-600" />
                     <span>Set Weekly Free Time</span>
                   </button>
+
+                  {onLockSite && (
+                    <button
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false);
+                        onLockSite();
+                      }}
+                      className="w-full flex items-center space-x-2.5 px-3 py-2 text-left rounded-xl hover:bg-slate-100 text-slate-700 font-medium transition-colors cursor-pointer"
+                    >
+                      <Lock className="w-4 h-4 text-slate-500" />
+                      <span>Lock Site Session</span>
+                    </button>
+                  )}
 
                   <div className="border-t border-slate-100 my-1"></div>
 
@@ -539,6 +550,22 @@ export const Header: React.FC<HeaderProps> = ({
                     <span>Instructor & Provider Hub</span>
                   </div>
                 </button>
+
+                {/* Lock Site Session */}
+                {onLockSite && (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onLockSite();
+                    }}
+                    className="w-full flex items-center justify-between px-3.5 py-3 text-slate-700 hover:bg-slate-100/80 font-semibold rounded-xl transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Lock className="w-4 h-4 text-slate-500" />
+                      <span>Lock Site Session</span>
+                    </div>
+                  </button>
+                )}
 
                 {/* 10. List Your Activity (Provider CTA) */}
                 <button

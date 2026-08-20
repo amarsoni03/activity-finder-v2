@@ -1,3 +1,19 @@
+import type {
+  Category,
+  AudienceType,
+  ActivityType,
+  ProviderType,
+  ProgramType,
+  RegularityType,
+  TimeOfDay,
+  DayOfWeek,
+  SkillLevel,
+  DeliveryMode,
+  MeetingPlatform,
+  BookingType,
+  GoalType,
+} from '../../types/common';
+
 export type {
   Category,
   AudienceType,
@@ -11,23 +27,8 @@ export type {
   DeliveryMode,
   MeetingPlatform,
   BookingType,
-  GoalType
-} from '../../types/common';
-import {
-  Category,
-  AudienceType,
-  ActivityType,
-  ProviderType,
-  ProgramType,
-  RegularityType,
-  TimeOfDay,
-  DayOfWeek,
-  SkillLevel,
-  DeliveryMode,
-  MeetingPlatform,
-  BookingType,
-  GoalType
-} from '../../types/common';
+  GoalType,
+};
 import { CommuteInfo, UserPreferences } from '../personalization/types';
 
 export interface TeacherQualifications {

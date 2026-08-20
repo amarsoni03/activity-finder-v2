@@ -1,24 +1,35 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Sparkles, SlidersHorizontal, RotateCcw, ChevronRight, ChevronDown, MapPin, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Sparkles, SlidersHorizontal, RotateCcw, ChevronRight, ChevronDown, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Category, AudienceType, TimeOfDay, DayOfWeek, FilterState, DeliveryFilter, LanguageFilter, Activity } from '../../../types';
 import { INITIAL_ACTIVITIES } from '../../activities/data/activitiesData';
 import { METRO_LINES, METRO_STATIONS } from '../../metro/data/metroData';
 
 import { SearchAutocomplete } from './SearchAutocomplete';
+import { AudienceSelector } from './AudienceSelector';
+import { AttendanceModeSelector } from './AttendanceModeSelector';
 import { CategoryPopover } from './CategoryPopover';
 import { MetroPopover } from './MetroPopover';
 import { LanguagePopover } from './LanguagePopover';
 import { TimeSelectorPopover } from './TimeSelectorPopover';
 import { MobileSearchSheet } from './MobileSearchSheet';
+import { isOnlineDeliveryMode } from '../utils/search';
 
 interface HeroSearchProps {
   filters: FilterState;
   onApplySearch: (newFilters: Partial<FilterState>) => void;
   activities?: Activity[];
-  onOpenAiMatchmaker?: () => void;
-  onOpenFreeTimePlanner?: () => void;
-  onSelectActivity?: (activity: Activity) => void;
+}
+
+interface SheetDraftState {
+  category: Category;
+  metroLineId: string;
+  metroStationIds: string[];
+  language: LanguageFilter;
+  timeOfDaySlots: TimeOfDay[];
+  daysOfWeek: DayOfWeek[];
+  deliveryMode: DeliveryFilter;
+  audience: AudienceType;
 }
 
 export const HeroSearch: React.FC<HeroSearchProps> = ({
@@ -39,6 +50,18 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
   // Mobile Bottom Sheets
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [mobileMetroSheetOpen, setMobileMetroSheetOpen] = useState(false);
+
+  // Staged draft state for Mobile More Filters Sheet
+  const [draftFilters, setDraftFilters] = useState<SheetDraftState>({
+    category: filters.category || 'All Categories',
+    metroLineId: filters.metroLineId || 'all',
+    metroStationIds: filters.metroStationIds || [],
+    language: filters.language || 'All',
+    timeOfDaySlots: filters.timeOfDaySlots || [],
+    daysOfWeek: filters.daysOfWeek || [],
+    deliveryMode: filters.deliveryMode || 'All',
+    audience: filters.audience || 'All',
+  });
 
   // Sync state when props change
   useEffect(() => {
@@ -61,16 +84,11 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
     }
   };
 
-  const isOnlineMode =
-    attendanceMode === 'Live Online' ||
-    attendanceMode === 'Online' ||
-    attendanceMode === 'Self-Paced' ||
-    filters.deliveryMode === 'Live Online';
+  const isOnlineMode = isOnlineDeliveryMode(attendanceMode) || isOnlineDeliveryMode(filters.deliveryMode);
 
   const executeSearch = (overrideProps?: Partial<FilterState>, shouldScroll = false) => {
     const activeMode = overrideProps?.deliveryMode || attendanceMode;
-    const activeIsOnline =
-      activeMode === 'Live Online' || activeMode === 'Online' || activeMode === 'Self-Paced';
+    const activeIsOnline = isOnlineDeliveryMode(activeMode);
 
     const payload: Partial<FilterState> = {
       searchKeyword,
@@ -127,163 +145,126 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
     });
   };
 
+  // Open mobile "More Filters" sheet and initialize draft state
+  const handleOpenMobileSheet = () => {
+    setDraftFilters({
+      category: selectedCategory,
+      metroLineId: selectedMetroLine,
+      metroStationIds: selectedStationIds,
+      language: selectedLanguage,
+      timeOfDaySlots: selectedTimeOfDay,
+      daysOfWeek: selectedDays,
+      deliveryMode: attendanceMode,
+      audience: selectedAudience,
+    });
+    setMobileSheetOpen(true);
+  };
+
+  // Commit draft filters from mobile sheet
+  const handleApplyMobileSheet = () => {
+    setSelectedCategory(draftFilters.category);
+    setSelectedMetroLine(draftFilters.metroLineId);
+    setSelectedStationIds(draftFilters.metroStationIds);
+    setSelectedLanguage(draftFilters.language);
+    setSelectedTimeOfDay(draftFilters.timeOfDaySlots);
+    setSelectedDays(draftFilters.daysOfWeek);
+    setAttendanceMode(draftFilters.deliveryMode);
+    setSelectedAudience(draftFilters.audience);
+
+    setMobileSheetOpen(false);
+
+    const activeIsOnline = isOnlineDeliveryMode(draftFilters.deliveryMode);
+    onApplySearch({
+      searchKeyword,
+      deliveryMode: draftFilters.deliveryMode,
+      category: draftFilters.category,
+      metroLineId: activeIsOnline ? 'all' : draftFilters.metroLineId,
+      metroStationIds: activeIsOnline ? [] : draftFilters.metroStationIds,
+      language: activeIsOnline ? draftFilters.language : filters.language,
+      timeOfDaySlots: draftFilters.timeOfDaySlots,
+      daysOfWeek: draftFilters.daysOfWeek,
+      audience: draftFilters.audience,
+    });
+
+    setTimeout(() => {
+      const resultsEl = document.getElementById('results-section');
+      if (resultsEl) {
+        resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 380, behavior: 'smooth' });
+      }
+    }, 50);
+  };
+
+  // Clear draft filters inside mobile sheet without immediate search execution
+  const handleClearMobileDraft = () => {
+    setDraftFilters({
+      category: 'All Categories',
+      metroLineId: 'all',
+      metroStationIds: [],
+      language: 'All',
+      timeOfDaySlots: [],
+      daysOfWeek: [],
+      deliveryMode: 'All',
+      audience: 'All',
+    });
+  };
+
+  const isDraftOnline = isOnlineDeliveryMode(draftFilters.deliveryMode);
+
   return (
     <section
       id="hero-search-section"
-      className="relative z-40 bg-[#07090f] border-b border-slate-800/60 text-white pt-2.5 sm:pt-6 pb-3 sm:pb-6 px-3 sm:px-6 lg:px-8 shadow-2xl overflow-visible"
+      className="relative z-40 bg-gradient-to-b from-slate-950 via-slate-900 to-[#0B1120] border-b border-slate-800/80 text-white pt-6 sm:pt-10 pb-8 sm:pb-12 px-3 sm:px-6 lg:px-8 shadow-md overflow-visible"
     >
-      {/* Decorative City Atmosphere Background */}
+      {/* Subtle Atmospheric Light Pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div
           aria-hidden="true"
           className="absolute inset-0 z-0 pointer-events-none"
           style={{
             background: [
-              'radial-gradient(ellipse 70% 55% at 18% 0%, rgba(37,58,110,0.22) 0%, transparent 70%)',
-              'radial-gradient(ellipse 55% 50% at 88% 15%, rgba(15,60,50,0.18) 0%, transparent 65%)',
-              'radial-gradient(ellipse 40% 30% at 52% 40%, rgba(22,28,40,0.30) 0%, transparent 100%)',
+              'radial-gradient(ellipse 65% 50% at 20% 0%, rgba(162,255,0,0.1) 0%, transparent 70%)',
+              'radial-gradient(ellipse 60% 50% at 85% 10%, rgba(59,130,246,0.08) 0%, transparent 65%)',
+              'radial-gradient(ellipse 40% 30% at 50% 100%, rgba(15,23,42,0.9) 0%, transparent 100%)',
             ].join(', '),
           }}
         />
 
-        {/* Abstract Urban Geometry (Desktop SVG) */}
+        {/* Subtle Metro Network Contour Lines */}
         <svg
           aria-hidden="true"
-          className="absolute inset-0 z-[1] pointer-events-none hidden sm:block"
+          className="absolute inset-0 z-[1] pointer-events-none hidden sm:block opacity-35"
           viewBox="0 0 1440 260"
           preserveAspectRatio="xMidYMid slice"
           xmlns="http://www.w3.org/2000/svg"
           style={{ width: '100%', height: '100%' }}
         >
-          <defs>
-            <linearGradient id="streak-a" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#8bb4d4" stopOpacity="0" />
-              <stop offset="40%" stopColor="#8bb4d4" stopOpacity="0.07" />
-              <stop offset="70%" stopColor="#a8c8e0" stopOpacity="0.04" />
-              <stop offset="100%" stopColor="#8bb4d4" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="streak-b" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#7ec8b0" stopOpacity="0" />
-              <stop offset="35%" stopColor="#7ec8b0" stopOpacity="0.055" />
-              <stop offset="65%" stopColor="#7ec8b0" stopOpacity="0.03" />
-              <stop offset="100%" stopColor="#7ec8b0" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="streak-c" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#6090c0" stopOpacity="0" />
-              <stop offset="50%" stopColor="#6090c0" stopOpacity="0.05" />
-              <stop offset="100%" stopColor="#6090c0" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="arch-fade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#a0bcd8" stopOpacity="0.12" />
-              <stop offset="100%" stopColor="#a0bcd8" stopOpacity="0" />
-            </linearGradient>
-            <radialGradient id="city-light-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#c8e0f0" stopOpacity="0.55" />
-              <stop offset="100%" stopColor="#c8e0f0" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="city-light-warm" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#d4e8b0" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#d4e8b0" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-
-          <line x1="-60" y1="68" x2="780" y2="58" stroke="url(#streak-a)" strokeWidth="1" />
-          <line x1="200" y1="108" x2="1100" y2="95" stroke="url(#streak-b)" strokeWidth="0.8" />
-          <line x1="480" y1="148" x2="1480" y2="132" stroke="url(#streak-a)" strokeWidth="0.7" />
-          <line x1="820" y1="42" x2="1440" y2="28" stroke="url(#streak-c)" strokeWidth="0.6" />
-          <line x1="900" y1="185" x2="1440" y2="175" stroke="url(#streak-b)" strokeWidth="0.5" />
-
-          <rect x="62"  y="0" width="1" height="88"  fill="url(#arch-fade)" />
-          <rect x="78"  y="0" width="1" height="110" fill="url(#arch-fade)" opacity="0.7" />
-          <rect x="91"  y="0" width="1" height="72"  fill="url(#arch-fade)" opacity="0.55" />
-          <rect x="105" y="0" width="1" height="130" fill="url(#arch-fade)" opacity="0.8" />
-          <rect x="118" y="0" width="1" height="95"  fill="url(#arch-fade)" opacity="0.6" />
-          <rect x="132" y="0" width="1" height="60"  fill="url(#arch-fade)" opacity="0.45" />
-
-          <rect x="1280" y="0" width="1" height="100" fill="url(#arch-fade)" opacity="0.5" />
-          <rect x="1295" y="0" width="1" height="140" fill="url(#arch-fade)" opacity="0.65" />
-          <rect x="1308" y="0" width="1" height="80"  fill="url(#arch-fade)" opacity="0.45" />
-          <rect x="1322" y="0" width="1" height="115" fill="url(#arch-fade)" opacity="0.55" />
-          <rect x="1337" y="0" width="1" height="70"  fill="url(#arch-fade)" opacity="0.4" />
-          <rect x="1352" y="0" width="1" height="90"  fill="url(#arch-fade)" opacity="0.5" />
-
-          <line x1="0"    y1="260" x2="720" y2="160" stroke="#3a5070" strokeWidth="0.5" strokeOpacity="0.12" />
-          <line x1="240"  y1="260" x2="720" y2="160" stroke="#3a5070" strokeWidth="0.5" strokeOpacity="0.10" />
-          <line x1="1440" y1="260" x2="720" y2="160" stroke="#3a5070" strokeWidth="0.5" strokeOpacity="0.12" />
-          <line x1="1200" y1="260" x2="720" y2="160" stroke="#3a5070" strokeWidth="0.5" strokeOpacity="0.10" />
-          <line x1="0" y1="220" x2="1440" y2="220" stroke="#2a3d54" strokeWidth="0.4" strokeOpacity="0.08" />
-          <line x1="0" y1="195" x2="1440" y2="195" stroke="#2a3d54" strokeWidth="0.4" strokeOpacity="0.06" />
-          <line x1="0" y1="178" x2="1440" y2="178" stroke="#2a3d54" strokeWidth="0.3" strokeOpacity="0.05" />
-
-          <circle cx="44"  cy="34"  r="1"   fill="#c0d8ec" fillOpacity="0.25" />
-          <circle cx="158" cy="18"  r="0.8" fill="#c0d8ec" fillOpacity="0.18" />
-          <circle cx="38"  cy="58"  r="0.7" fill="#b0cce0" fillOpacity="0.15" />
-          <circle cx="175" cy="42"  r="1"   fill="#bcd8e8" fillOpacity="0.20" />
-          <circle cx="22"  cy="80"  r="0.8" fill="#a8cce0" fillOpacity="0.12" />
-          <circle cx="195" cy="78"  r="0.7" fill="#c0d8ec" fillOpacity="0.14" />
-
-          <circle cx="340" cy="28"  r="0.8" fill="#c0d8ec" fillOpacity="0.14" />
-          <circle cx="390" cy="54"  r="0.7" fill="#b8d4e8" fillOpacity="0.12" />
-          <circle cx="310" cy="72"  r="1"   fill="#c4daf0" fillOpacity="0.16" />
-
-          <circle cx="1240" cy="22"  r="0.8" fill="#c0d8ec" fillOpacity="0.18" />
-          <circle cx="1380" cy="38"  r="1"   fill="#c0d8ec" fillOpacity="0.22" />
-          <circle cx="1260" cy="54"  r="0.7" fill="#b0cce0" fillOpacity="0.14" />
-          <circle cx="1400" cy="60"  r="0.8" fill="#bcd8e8" fillOpacity="0.16" />
-          <circle cx="1220" cy="78"  r="1"   fill="#c0d8ec" fillOpacity="0.20" />
-          <circle cx="1420" cy="85"  r="0.7" fill="#a8cce0" fillOpacity="0.12" />
-          <circle cx="1360" cy="18"  r="0.8" fill="#c4daf0" fillOpacity="0.15" />
-
-          <circle cx="1060" cy="32"  r="0.8" fill="#c0d8ec" fillOpacity="0.12" />
-          <circle cx="1100" cy="60"  r="0.7" fill="#b8d4e8" fillOpacity="0.10" />
-
-          <circle cx="88"  cy="26"  r="1.2" fill="#d4e8b0" fillOpacity="0.18" />
-          <circle cx="1312" cy="30" r="1.2" fill="#d4e8b0" fillOpacity="0.16" />
-          <circle cx="420" cy="38"  r="1"   fill="#cce4a8" fillOpacity="0.12" />
-          <circle cx="1140" cy="45" r="1"   fill="#cce4a8" fillOpacity="0.12" />
-
-          <circle cx="88"  cy="26"  r="6" fill="url(#city-light-warm)" />
-          <circle cx="1312" cy="30" r="6" fill="url(#city-light-warm)" />
-          <circle cx="175" cy="42"  r="5" fill="url(#city-light-glow)" />
-          <circle cx="1380" cy="38" r="5" fill="url(#city-light-glow)" />
+          <line x1="-60" y1="68" x2="780" y2="58" stroke="#334155" strokeWidth="0.8" strokeDasharray="6 6" />
+          <line x1="200" y1="108" x2="1100" y2="95" stroke="#475569" strokeWidth="0.8" />
+          <line x1="480" y1="148" x2="1480" y2="132" stroke="#334155" strokeWidth="0.6" strokeDasharray="4 4" />
+          <circle cx="88" cy="26" r="3" fill="#A2FF00" stroke="#0F172A" strokeWidth="1" />
+          <circle cx="1312" cy="30" r="3" fill="#A2FF00" stroke="#0F172A" strokeWidth="1" />
+          <circle cx="175" cy="42" r="2.5" fill="#3B82F6" />
+          <circle cx="1380" cy="38" r="2.5" fill="#EF4444" />
+          <circle cx="720" cy="80" r="3" fill="#10B981" />
         </svg>
-
-        {/* Focal Glow */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 z-[2] pointer-events-none"
-          style={{
-            background: [
-              'radial-gradient(ellipse 52% 38% at 50% 12%, rgba(10,44,38,0.28) 0%, transparent 100%)',
-              'radial-gradient(ellipse 38% 28% at 38% 18%, rgba(14,32,68,0.22) 0%, transparent 100%)',
-            ].join(', '),
-          }}
-        />
-
-        {/* Bottom Edge Transition */}
-        <div
-          aria-hidden="true"
-          className="absolute bottom-0 left-0 right-0 z-[3] h-8 pointer-events-none"
-          style={{
-            background: 'linear-gradient(to bottom, transparent 0%, rgba(7,9,15,0.55) 100%)',
-          }}
-        />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto space-y-2.5 sm:space-y-4">
+      <div className="relative z-10 max-w-5xl mx-auto space-y-4 sm:space-y-6">
         {/* Headline & Subtitle */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center space-y-1 max-w-3xl mx-auto px-2"
+          className="text-center space-y-2 max-w-3xl mx-auto px-2"
         >
-          <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-900 text-slate-300 text-[10px] sm:text-[11px] font-bold border border-slate-800 shadow-2xs">
-            <Sparkles className="w-3 h-3 text-[#A2FF00]" />
+          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 text-[#A2FF00] text-[11px] sm:text-xs font-extrabold shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#A2FF00]" />
             <span>Activity Discovery • Moscow Metro</span>
           </div>
 
-          <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-snug px-3">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight px-3">
             Find something worth doing in Moscow.
           </h1>
 
@@ -291,20 +272,20 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[11px] sm:text-xs md:text-sm text-slate-400 font-normal max-w-lg mx-auto leading-relaxed px-2"
+            className="text-xs sm:text-sm md:text-base text-slate-300 font-normal max-w-xl mx-auto leading-relaxed px-2"
           >
-            Find classes, sports, workshops and experiences across Moscow's metro network.
+            Find activities, courses, sports and workshops that fit your free time and metro location.
           </motion.p>
         </motion.div>
 
-        {/* ONE COHESIVE LIGHT SEARCH SURFACE PANEL */}
+        {/* PRIMARY CONSTITUTION SEARCH SURFACE PANEL */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-20 bg-slate-50 rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-2xl shadow-black/40 space-y-2.5 sm:space-y-3"
+          className="relative z-20 bg-slate-900/90 backdrop-blur-xl rounded-3xl p-4 sm:p-6 border border-slate-800/90 shadow-2xl shadow-black/40 space-y-4"
         >
-          {/* ROW 1: ACTIVITY SEARCH (WHAT) */}
+          {/* ROW 1: ACTIVITY KEYWORD SEARCH (WHAT) */}
           <div className="relative z-30">
             <SearchAutocomplete
               value={searchKeyword}
@@ -314,97 +295,52 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
             />
           </div>
 
-          {/* ROW 2: WHO (Audience) & HOW (Attendance Mode) */}
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-1">
-            {/* Audience Group */}
-            <div className="flex items-center gap-1 bg-slate-100/90 border border-slate-200/90 p-1 rounded-xl shadow-2xs">
-              <span className="text-xs font-semibold text-slate-500 pl-2 pr-2 mr-2 select-none">Audience:</span>
-              {[
-                { id: 'All' as AudienceType, label: 'All' },
-                { id: 'Adults' as AudienceType, label: 'Adults' },
-                { id: 'Children' as AudienceType, label: 'Kids' },
-                { id: 'Corporate' as AudienceType, label: 'Corporate' },
-              ].map((item) => {
-                const isSelected = selectedAudience === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedAudience(item.id);
-                      executeSearch({ audience: item.id });
-                    }}
-                    className={`relative isolate overflow-hidden px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer outline-none flex items-center justify-center active:scale-95 group ${
-                      isSelected
-                        ? 'bg-[#A2FF00] text-[#111827] font-bold shadow-xs border border-[#8ee600]/40'
-                        : 'text-slate-600 hover:text-slate-950 hover:bg-white/80'
-                    }`}
-                  >
-                    {isSelected && (
-                      <motion.div
-                        layoutId="hero-audience-pill"
-                        className="absolute inset-0 bg-[#A2FF00] rounded-lg z-0 shadow-xs border border-[#8ee600]/40"
-                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                      />
-                    )}
-                    <span className={`relative z-10 truncate transition-colors duration-150 ${
-                      isSelected ? 'text-[#111827] font-bold' : 'text-slate-600 group-hover:text-slate-950'
-                    }`}>
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
+          {/* ROW 2: WHO (Audience) & HOW (Attendance Mode) QUICK TOGGLES */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <AudienceSelector
+                selectedAudience={selectedAudience}
+                onSelectAudience={(aud) => {
+                  setSelectedAudience(aud);
+                  executeSearch({ audience: aud });
+                }}
+              />
+
+              <AttendanceModeSelector
+                selectedMode={attendanceMode}
+                onSelectMode={handleAttendanceChange}
+              />
             </div>
 
-            {/* Mode Group */}
-            <div className="flex items-center gap-1 bg-slate-100/90 border border-slate-200/90 p-1 rounded-xl shadow-2xs">
-              <span className="text-xs font-semibold text-slate-500 pl-2 pr-2 mr-2 select-none">Mode:</span>
-              {[
-                { id: 'In Person' as DeliveryFilter, label: 'Near Me' },
-                { id: 'Live Online' as DeliveryFilter, label: 'Online' },
-                { id: 'All' as DeliveryFilter, label: 'Both' },
-              ].map((item) => {
-                const activeModeVal =
-                  attendanceMode === 'Self-Paced' || attendanceMode === 'Hybrid' || attendanceMode === 'Live Online'
-                    ? 'Live Online'
-                    : attendanceMode === 'In Person'
-                    ? 'In Person'
-                    : 'All';
-                const isSelected = activeModeVal === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleAttendanceChange(item.id)}
-                    className={`relative isolate overflow-hidden px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer outline-none flex items-center justify-center active:scale-95 group ${
-                      isSelected
-                        ? 'bg-[#A2FF00] text-[#111827] font-bold shadow-xs border border-[#8ee600]/40'
-                        : 'text-slate-600 hover:text-slate-950 hover:bg-white/80'
-                    }`}
-                  >
-                    {isSelected && (
-                      <motion.div
-                        layoutId="hero-mode-pill"
-                        className="absolute inset-0 bg-[#A2FF00] rounded-lg z-0 shadow-xs border border-[#8ee600]/40"
-                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                      />
-                    )}
-                    <span className={`relative z-10 truncate transition-colors duration-150 ${
-                      isSelected ? 'text-[#111827] font-bold' : 'text-slate-600 group-hover:text-slate-950'
-                    }`}>
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            {/* Quick Active Filter Count or Reset indicator */}
+            {(selectedCategory !== 'All Categories' || selectedMetroLine !== 'all' || selectedTimeOfDay.length > 0 || searchKeyword) && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="text-xs font-semibold text-slate-400 hover:text-[#A2FF00] flex items-center space-x-1 cursor-pointer transition-colors px-2 py-1"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset search</span>
+              </button>
+            )}
           </div>
 
-          {/* DESKTOP CONTROLS (ROW 3): Metro | Time | Search | Filters */}
-          <div className="hidden sm:grid grid-cols-12 gap-3 items-end pt-3 border-t border-slate-200/80 relative z-20">
-            {/* Metro Line → Station Selector (WHERE) */}
-            <div className="col-span-5 relative z-30">
+          {/* DESKTOP CONSTITUTION BAR: Category -> Metro -> Available Time -> Search */}
+          <div className="hidden sm:grid grid-cols-12 gap-3 items-end pt-3 border-t border-slate-800/80 relative z-20">
+            {/* 1. Category (Optional) */}
+            <div className="col-span-3 relative z-30">
+              <CategoryPopover
+                selectedCategory={selectedCategory}
+                onSelectCategory={(cat) => {
+                  setSelectedCategory(cat);
+                  executeSearch({ category: cat });
+                }}
+                label="Category"
+              />
+            </div>
+
+            {/* 2. Metro Line -> Station (WHERE) */}
+            <div className="col-span-4 relative z-30">
               {isOnlineMode ? (
                 <LanguagePopover
                   selectedLanguage={selectedLanguage}
@@ -433,13 +369,13 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
                     setSelectedStationIds([]);
                     executeSearch({ metroStationIds: [] });
                   }}
-                  label="Metro Line → Station"
+                  label="Metro Line & Station"
                 />
               )}
             </div>
 
-            {/* Time Selector (WHEN) */}
-            <div className="col-span-4 relative z-20">
+            {/* 3. Available Time (WHEN) */}
+            <div className="col-span-3 relative z-20">
               <TimeSelectorPopover
                 selectedTimes={selectedTimeOfDay}
                 selectedDays={selectedDays}
@@ -458,12 +394,12 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
               />
             </div>
 
-            {/* Desktop Action Buttons */}
-            <div className="col-span-3 relative z-10 flex items-center space-x-2">
+            {/* 4. Desktop Search & Filter Buttons */}
+            <div className="col-span-2 relative z-10 flex items-center space-x-2">
               <button
                 type="button"
                 onClick={() => executeSearch({}, true)}
-                className="flex-1 flex items-center justify-center space-x-2 px-5 py-2.5 bg-[#A2FF00] hover:bg-[#8ee600] text-[#111827] rounded-xl font-extrabold text-xs transition-all shadow-md cursor-pointer active:scale-98 min-h-[44px]"
+                className="flex-1 flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-[#A2FF00] hover:bg-[#91E600] text-[#111827] rounded-xl font-extrabold text-xs transition-all shadow-sm hover:shadow-md cursor-pointer active:scale-98 min-h-[44px]"
               >
                 <Search className="w-4 h-4 text-[#111827] shrink-0" />
                 <span>Search</span>
@@ -471,76 +407,75 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
 
               <button
                 type="button"
-                onClick={() => setMobileSheetOpen(true)}
-                className="p-2.5 text-slate-700 hover:text-slate-950 hover:bg-slate-200/70 bg-white rounded-xl border border-slate-300 transition-colors cursor-pointer shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs"
+                onClick={handleOpenMobileSheet}
+                className="p-2.5 text-slate-300 hover:text-white hover:bg-slate-800 bg-slate-950/80 rounded-xl border border-slate-700/80 transition-colors cursor-pointer shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-2xs"
                 title="More Filters"
+                aria-label="More Filters"
               >
-                <SlidersHorizontal className="w-4 h-4 text-[#074213]" />
+                <SlidersHorizontal className="w-4 h-4 text-slate-300" />
               </button>
-
-              {/* Accessible Reset Button with Hover Tooltip */}
-              <div className="relative group/reset shrink-0">
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  aria-label="Reset all filters"
-                  className="p-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-200/70 bg-white rounded-xl border border-slate-300 transition-colors cursor-pointer shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs focus:outline-none focus:ring-2 focus:ring-slate-400"
-                  title="Reset all filters"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
-                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/reset:flex items-center px-2.5 py-1 bg-slate-900 text-white text-[11px] font-medium rounded-md whitespace-nowrap shadow-lg z-50 transition-opacity">
-                  Reset all filters
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
-                </div>
-              </div>
             </div>
           </div>
 
           {/* MOBILE RECOMPOSED CONTROLS */}
-          <div className="sm:hidden space-y-3 pt-3 border-t border-slate-200/80">
-            {!isOnlineMode && (
+          <div className="sm:hidden space-y-2.5 pt-2.5 border-t border-slate-800/80">
+            {/* Category Trigger on Mobile */}
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[10px] font-bold tracking-wider uppercase text-slate-600 block mb-1">
-                  Metro Location
+                <label className="text-[10px] font-bold tracking-wider uppercase text-slate-400 block mb-1">
+                  Category
                 </label>
                 <button
                   type="button"
-                  onClick={() => setMobileMetroSheetOpen(true)}
-                  className="w-full bg-white hover:bg-slate-50 border border-slate-300 rounded-xl px-3.5 h-[52px] text-left flex items-center justify-between transition-colors shadow-xs cursor-pointer active:bg-slate-100"
+                  onClick={handleOpenMobileSheet}
+                  className="w-full bg-slate-950/80 hover:bg-slate-800 border border-slate-700 rounded-xl px-3 h-[46px] text-left flex items-center justify-between transition-colors shadow-2xs cursor-pointer"
                 >
-                  <div className="flex items-center space-x-2.5 min-w-0">
-                    <div
-                      className="w-3.5 h-3.5 rounded-full shrink-0 border border-slate-900/20 shadow-xs"
-                      style={{
-                        backgroundColor:
-                          selectedMetroLine !== 'all'
-                            ? METRO_LINES.find((l) => l.id === selectedMetroLine)?.color || '#EF4444'
-                            : '#A2FF00',
-                      }}
-                    />
-                    <span className="text-xs font-bold text-slate-900 truncate">
-                      {selectedStationIds.length > 0
-                        ? `${METRO_LINES.find((l) => l.id === selectedMetroLine)?.name.split(':')[1]?.trim() || ''} · ${
-                            selectedStationIds.length === 1
-                              ? METRO_STATIONS.find((s) => s.id === selectedStationIds[0])?.name || '1 Station'
-                              : `${selectedStationIds.length} Stations`
-                          }`
-                        : selectedMetroLine !== 'all'
-                        ? `${METRO_LINES.find((l) => l.id === selectedMetroLine)?.name.split(':')[1]?.trim() || ''} → Choose Station`
-                        : 'Metro Line → Station'}
-                    </span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-500 shrink-0 ml-2" />
+                  <span className="text-xs font-bold text-white truncate">
+                    {selectedCategory}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 </button>
               </div>
-            )}
 
-            <div className="flex items-center space-x-2">
+              {!isOnlineMode && (
+                <div>
+                  <label className="text-[10px] font-bold tracking-wider uppercase text-slate-400 block mb-1">
+                    Metro
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setMobileMetroSheetOpen(true)}
+                    className="w-full bg-slate-950/80 hover:bg-slate-800 border border-slate-700 rounded-xl px-3 h-[46px] text-left flex items-center justify-between transition-colors shadow-2xs cursor-pointer"
+                  >
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{
+                          backgroundColor:
+                            selectedMetroLine !== 'all'
+                              ? METRO_LINES.find((l) => l.id === selectedMetroLine)?.color || '#EF4444'
+                              : '#A2FF00',
+                        }}
+                      />
+                      <span className="text-xs font-bold text-white truncate">
+                        {selectedStationIds.length > 0
+                          ? `${selectedStationIds.length} Stations`
+                          : selectedMetroLine !== 'all'
+                          ? METRO_LINES.find((l) => l.id === selectedMetroLine)?.name.split(':')[1]?.trim() || 'Line'
+                          : 'All Metro'}
+                      </span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2 pt-1">
               <button
                 type="button"
                 onClick={() => executeSearch({}, true)}
-                className="flex-1 flex items-center justify-center space-x-2 h-[50px] bg-[#A2FF00] hover:bg-[#8ee600] text-[#111827] rounded-xl font-extrabold text-sm transition-all shadow-md cursor-pointer active:scale-98"
+                className="flex-1 flex items-center justify-center space-x-2 h-[48px] bg-[#A2FF00] hover:bg-[#91E600] text-[#111827] rounded-xl font-extrabold text-sm transition-all shadow-sm cursor-pointer active:scale-98"
               >
                 <Search className="w-4 h-4 text-[#111827] shrink-0" />
                 <span>Search Activities</span>
@@ -548,23 +483,13 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
 
               <button
                 type="button"
-                onClick={handleResetFilters}
-                aria-label="Reset all filters"
-                className="h-[50px] w-[50px] bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-300 shadow-xs transition-colors flex items-center justify-center cursor-pointer shrink-0"
-                title="Reset all filters"
+                onClick={handleOpenMobileSheet}
+                className="h-[48px] px-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 shadow-2xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer font-bold text-xs shrink-0"
               >
-                <RotateCcw className="w-4 h-4" />
+                <SlidersHorizontal className="w-4 h-4 text-slate-300" />
+                <span>Filters</span>
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setMobileSheetOpen(true)}
-              className="w-full h-[44px] bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-950 rounded-xl font-semibold text-xs border border-slate-300 shadow-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
-            >
-              <SlidersHorizontal className="w-4 h-4 text-[#074213]" />
-              <span>More Filters</span>
-            </button>
           </div>
         </motion.div>
       </div>
@@ -597,7 +522,7 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
         />
       </MobileSearchSheet>
 
-      {/* MORE FILTERS MODAL (Desktop & Mobile) */}
+      {/* MORE FILTERS MODAL (Desktop & Mobile) — Staged Filtering */}
       <MobileSearchSheet
         isOpen={mobileSheetOpen}
         onClose={() => setMobileSheetOpen(false)}
@@ -605,99 +530,100 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
         subtitle="Filter activities by Category, Available Time & Moscow Metro"
         activeCount={
           [
-            selectedCategory !== 'All Categories' && selectedCategory !== 'All',
-            selectedMetroLine !== 'all',
-            selectedStationIds.length > 0,
-            selectedTimeOfDay.length > 0,
-            selectedDays.length > 0 && selectedDays.length < 7,
-            attendanceMode !== 'All',
-            selectedLanguage !== 'All',
+            draftFilters.category !== 'All Categories' && draftFilters.category !== 'All',
+            draftFilters.metroLineId !== 'all',
+            draftFilters.metroStationIds.length > 0,
+            draftFilters.timeOfDaySlots.length > 0,
+            draftFilters.daysOfWeek.length > 0 && draftFilters.daysOfWeek.length < 7,
+            draftFilters.deliveryMode !== 'All',
+            draftFilters.language !== 'All',
+            draftFilters.audience !== 'All',
           ].filter(Boolean).length
         }
-        onClear={handleResetFilters}
-        onApply={() => {
-          setMobileSheetOpen(false);
-          executeSearch({}, true);
-        }}
+        onClear={handleClearMobileDraft}
+        onApply={handleApplyMobileSheet}
       >
         <div className="space-y-6">
-          {/* 1. ACTIVE FILTER SUMMARY PILLS (if active) */}
+          {/* 1. ACTIVE FILTER SUMMARY PILLS (if active in draft) */}
           {(() => {
             const pills: { id: string; label: string; onRemove: () => void }[] = [];
-            if (selectedCategory && selectedCategory !== 'All Categories' && selectedCategory !== 'All') {
+            if (draftFilters.category && draftFilters.category !== 'All Categories' && draftFilters.category !== 'All') {
               pills.push({
                 id: 'cat',
-                label: `Category: ${selectedCategory}`,
+                label: `Category: ${draftFilters.category}`,
                 onRemove: () => {
-                  setSelectedCategory('All Categories');
-                  executeSearch({ category: 'All Categories' });
+                  setDraftFilters((prev) => ({ ...prev, category: 'All Categories' }));
                 },
               });
             }
-            if (selectedMetroLine && selectedMetroLine !== 'all') {
-              const lineObj = METRO_LINES.find((l) => l.id === selectedMetroLine);
+            if (draftFilters.metroLineId && draftFilters.metroLineId !== 'all') {
+              const lineObj = METRO_LINES.find((l) => l.id === draftFilters.metroLineId);
               pills.push({
                 id: 'line',
                 label: lineObj?.name.split(':')[1]?.trim() || lineObj?.name || 'Metro Line',
                 onRemove: () => {
-                  setSelectedMetroLine('all');
-                  setSelectedStationIds([]);
-                  executeSearch({ metroLineId: 'all', metroStationIds: [] });
+                  setDraftFilters((prev) => ({ ...prev, metroLineId: 'all', metroStationIds: [] }));
                 },
               });
             }
-            if (selectedStationIds.length > 0) {
+            if (draftFilters.metroStationIds.length > 0) {
               pills.push({
                 id: 'stations',
-                label: selectedStationIds.length === 1
-                  ? METRO_STATIONS.find((s) => s.id === selectedStationIds[0])?.name || '1 Station'
-                  : `${selectedStationIds.length} Stations`,
+                label: draftFilters.metroStationIds.length === 1
+                  ? METRO_STATIONS.find((s) => s.id === draftFilters.metroStationIds[0])?.name || '1 Station'
+                  : `${draftFilters.metroStationIds.length} Stations`,
                 onRemove: () => {
-                  setSelectedStationIds([]);
-                  executeSearch({ metroStationIds: [] });
+                  setDraftFilters((prev) => ({ ...prev, metroStationIds: [] }));
                 },
               });
             }
-            selectedTimeOfDay.forEach((t) => {
+            draftFilters.timeOfDaySlots.forEach((t) => {
               pills.push({
                 id: `time-${t}`,
                 label: t,
                 onRemove: () => {
-                  const newTimes = selectedTimeOfDay.filter((item) => item !== t);
-                  setSelectedTimeOfDay(newTimes);
-                  executeSearch({ timeOfDaySlots: newTimes });
+                  setDraftFilters((prev) => ({
+                    ...prev,
+                    timeOfDaySlots: prev.timeOfDaySlots.filter((item) => item !== t),
+                  }));
                 },
               });
             });
-            if (selectedDays.length > 0 && selectedDays.length < 7) {
-              const isWeekend = selectedDays.includes('Saturday') && selectedDays.includes('Sunday') && selectedDays.length === 2;
-              const isWeekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].every((d) => selectedDays.includes(d as DayOfWeek)) && selectedDays.length === 5;
+            if (draftFilters.daysOfWeek.length > 0 && draftFilters.daysOfWeek.length < 7) {
+              const isWeekend = draftFilters.daysOfWeek.includes('Saturday') && draftFilters.daysOfWeek.includes('Sunday') && draftFilters.daysOfWeek.length === 2;
+              const isWeekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].every((d) => draftFilters.daysOfWeek.includes(d as DayOfWeek)) && draftFilters.daysOfWeek.length === 5;
               pills.push({
                 id: 'days',
-                label: isWeekend ? 'Weekend' : isWeekdays ? 'Weekdays' : `${selectedDays.length} Days`,
+                label: isWeekend ? 'Weekend' : isWeekdays ? 'Weekdays' : `${draftFilters.daysOfWeek.length} Days`,
                 onRemove: () => {
-                  setSelectedDays([]);
-                  executeSearch({ daysOfWeek: [] });
+                  setDraftFilters((prev) => ({ ...prev, daysOfWeek: [] }));
                 },
               });
             }
-            if (attendanceMode && attendanceMode !== 'All') {
+            if (draftFilters.deliveryMode && draftFilters.deliveryMode !== 'All') {
               pills.push({
                 id: 'mode',
-                label: attendanceMode,
+                label: draftFilters.deliveryMode,
                 onRemove: () => {
-                  setAttendanceMode('All');
-                  executeSearch({ deliveryMode: 'All' });
+                  setDraftFilters((prev) => ({ ...prev, deliveryMode: 'All' }));
                 },
               });
             }
-            if (selectedLanguage && selectedLanguage !== 'All') {
+            if (draftFilters.audience && draftFilters.audience !== 'All') {
+              pills.push({
+                id: 'aud',
+                label: `Audience: ${draftFilters.audience}`,
+                onRemove: () => {
+                  setDraftFilters((prev) => ({ ...prev, audience: 'All' }));
+                },
+              });
+            }
+            if (draftFilters.language && draftFilters.language !== 'All') {
               pills.push({
                 id: 'lang',
-                label: selectedLanguage,
+                label: draftFilters.language,
                 onRemove: () => {
-                  setSelectedLanguage('All');
-                  executeSearch({ language: 'All' });
+                  setDraftFilters((prev) => ({ ...prev, language: 'All' }));
                 },
               });
             }
@@ -705,15 +631,15 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
             if (pills.length === 0) return null;
 
             return (
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+              <div className="p-3.5 bg-slate-900 rounded-2xl border border-slate-750 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
                     Active Filters ({pills.length})
                   </span>
                   <button
                     type="button"
-                    onClick={handleResetFilters}
-                    className="text-[11px] font-bold text-slate-600 hover:text-slate-950 hover:underline cursor-pointer"
+                    onClick={handleClearMobileDraft}
+                    className="text-[11px] font-bold text-slate-400 hover:text-white hover:underline cursor-pointer"
                   >
                     Clear all
                   </button>
@@ -722,7 +648,7 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
                   {pills.map((pill) => (
                     <span
                       key={pill.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 text-white rounded-full text-xs font-semibold shadow-2xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-800 text-white rounded-full text-xs font-semibold shadow-2xs border border-slate-700"
                     >
                       <span>{pill.label}</span>
                       <button
@@ -743,10 +669,9 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
           {/* 2. CATEGORY SECTION */}
           <div className="space-y-2">
             <CategoryPopover
-              selectedCategory={selectedCategory}
+              selectedCategory={draftFilters.category}
               onSelectCategory={(cat) => {
-                setSelectedCategory(cat);
-                executeSearch({ category: cat });
+                setDraftFilters((prev) => ({ ...prev, category: cat }));
               }}
               label="Category"
               isMobileModal
@@ -754,31 +679,31 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
           </div>
 
           {/* 3. AVAILABLE TIME SECTION */}
-          <div className="space-y-2 pt-5 border-t border-slate-200/80">
-            <label className="text-[11px] font-bold tracking-wider uppercase block text-slate-700">
+          <div className="space-y-2 pt-5 border-t border-slate-800">
+            <label className="text-[11px] font-bold tracking-wider uppercase block text-slate-300">
               Available Time
             </label>
             <TimeSelectorPopover
-              selectedTimes={selectedTimeOfDay}
-              selectedDays={selectedDays}
+              selectedTimes={draftFilters.timeOfDaySlots}
+              selectedDays={draftFilters.daysOfWeek}
               onToggleTime={(t) => {
-                toggleTimeOfDay(t);
-                const newTimes = selectedTimeOfDay.includes(t)
-                  ? selectedTimeOfDay.filter((item) => item !== t)
-                  : [...selectedTimeOfDay, t];
-                executeSearch({ timeOfDaySlots: newTimes });
+                setDraftFilters((prev) => ({
+                  ...prev,
+                  timeOfDaySlots: prev.timeOfDaySlots.includes(t)
+                    ? prev.timeOfDaySlots.filter((item) => item !== t)
+                    : [...prev.timeOfDaySlots, t],
+                }));
               }}
               onSelectDays={(d) => {
-                setSelectedDays(d);
-                executeSearch({ daysOfWeek: d });
+                setDraftFilters((prev) => ({ ...prev, daysOfWeek: d }));
               }}
               isMobileModal
             />
           </div>
 
           {/* 4. MOSCOW METRO SECTION */}
-          {!isOnlineMode && (() => {
-            const selectedLineObj = selectedMetroLine !== 'all' ? METRO_LINES.find((l) => l.id === selectedMetroLine) : null;
+          {!isDraftOnline && (() => {
+            const selectedLineObj = draftFilters.metroLineId !== 'all' ? METRO_LINES.find((l) => l.id === draftFilters.metroLineId) : null;
             const lineColor = selectedLineObj?.color || '#A2FF00';
             const lineShortName = selectedLineObj
               ? selectedLineObj.name.includes(':')
@@ -787,19 +712,19 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
               : 'All Metro Lines';
 
             return (
-              <div className="space-y-3 pt-5 border-t border-slate-200/80">
+              <div className="space-y-3 pt-5 border-t border-slate-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="w-5 h-5 rounded-md bg-[#074213]/10 flex items-center justify-center text-[#074213] text-xs font-black">
+                    <div className="w-5 h-5 rounded-md bg-[#A2FF00]/15 flex items-center justify-center text-[#A2FF00] text-xs font-black">
                       M
                     </div>
-                    <label className="text-[11px] font-bold tracking-wider uppercase block text-slate-700">
+                    <label className="text-[11px] font-bold tracking-wider uppercase block text-slate-300">
                       Moscow Metro Discovery
                     </label>
                   </div>
-                  {selectedStationIds.length > 0 && (
-                    <span className="text-[11px] font-extrabold text-[#074213] bg-[#A2FF00]/30 px-2.5 py-0.5 rounded-full">
-                      {selectedStationIds.length} {selectedStationIds.length === 1 ? 'station' : 'stations'} selected
+                  {draftFilters.metroStationIds.length > 0 && (
+                    <span className="text-[11px] font-extrabold text-slate-950 bg-[#A2FF00] px-2.5 py-0.5 rounded-full">
+                      {draftFilters.metroStationIds.length} {draftFilters.metroStationIds.length === 1 ? 'station' : 'stations'} selected
                     </span>
                   )}
                 </div>
@@ -816,17 +741,19 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
                     </div>
                     <select
                       aria-label="Metro Line"
-                      value={selectedMetroLine}
+                      value={draftFilters.metroLineId}
                       onChange={(e) => {
-                        setSelectedMetroLine(e.target.value);
-                        setSelectedStationIds([]);
-                        executeSearch({ metroLineId: e.target.value, metroStationIds: [] });
+                        setDraftFilters((prev) => ({
+                          ...prev,
+                          metroLineId: e.target.value,
+                          metroStationIds: [],
+                        }));
                       }}
-                      className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-8 py-2.5 min-h-[46px] text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#A2FF00] cursor-pointer appearance-none shadow-2xs"
+                      className="w-full bg-slate-950/80 border border-slate-700 rounded-xl pl-9 pr-8 py-2.5 min-h-[46px] text-xs sm:text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-[#A2FF00] cursor-pointer appearance-none shadow-2xs"
                     >
-                      <option value="all">All Metro Lines (Entire Network)</option>
+                      <option value="all" className="bg-slate-900 text-white">All Metro Lines (Entire Network)</option>
                       {METRO_LINES.map((line) => (
-                        <option key={line.id} value={line.id}>
+                        <option key={line.id} value={line.id} className="bg-slate-900 text-white">
                           {line.name}
                         </option>
                       ))}
@@ -836,7 +763,7 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
 
                   {/* Subtle Metro Connector Line */}
                   <div className="flex items-center pl-5 -my-1">
-                    <div className="w-0.5 h-3 bg-slate-300" />
+                    <div className="w-0.5 h-3 bg-slate-700" />
                   </div>
 
                   {/* Step 2: Station Trigger */}
@@ -845,16 +772,16 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
                     onClick={() => {
                       setMobileMetroSheetOpen(true);
                     }}
-                    className="w-full bg-white hover:bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 min-h-[46px] text-left flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-900 transition-colors shadow-2xs cursor-pointer"
+                    className="w-full bg-slate-950/80 hover:bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 min-h-[46px] text-left flex items-center justify-between text-xs sm:text-sm font-semibold text-white transition-colors shadow-2xs cursor-pointer"
                   >
                     <div className="flex items-center space-x-2.5 min-w-0">
-                      <div className="w-3.5 h-3.5 rounded-full border-2 border-[#074213] flex items-center justify-center shrink-0">
-                        <div className="w-1 h-1 rounded-full bg-[#074213]" />
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-[#A2FF00] flex items-center justify-center shrink-0">
+                        <div className="w-1 h-1 rounded-full bg-[#A2FF00]" />
                       </div>
                       <span className="truncate">
-                        {selectedStationIds.length > 0
-                          ? `${selectedStationIds.length} Stations selected on ${lineShortName}`
-                          : selectedMetroLine !== 'all'
+                        {draftFilters.metroStationIds.length > 0
+                          ? `${draftFilters.metroStationIds.length} Stations selected on ${lineShortName}`
+                          : draftFilters.metroLineId !== 'all'
                           ? `Choose stations on ${lineShortName} →`
                           : 'All Stations (Choose specific stations →)'}
                       </span>
@@ -866,14 +793,35 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
             );
           })()}
 
-          {/* 5. DELIVERY MODE & LANGUAGE (when relevant) */}
-          {attendanceMode === 'Live Online' && (
-            <div className="space-y-2 pt-5 border-t border-slate-200/80">
+          {/* 5. AUDIENCE & ATTENDANCE IN SHEET */}
+          <div className="space-y-3 pt-5 border-t border-slate-800">
+            <label className="text-[11px] font-bold tracking-wider uppercase block text-slate-300">
+              Audience & Attendance
+            </label>
+            <div className="flex flex-wrap gap-2.5">
+              <AudienceSelector
+                selectedAudience={draftFilters.audience}
+                onSelectAudience={(aud) => {
+                  setDraftFilters((prev) => ({ ...prev, audience: aud }));
+                }}
+              />
+
+              <AttendanceModeSelector
+                selectedMode={draftFilters.deliveryMode}
+                onSelectMode={(mode) => {
+                  setDraftFilters((prev) => ({ ...prev, deliveryMode: mode }));
+                }}
+              />
+            </div>
+          </div>
+
+          {/* 6. DELIVERY MODE & LANGUAGE (when relevant) */}
+          {isDraftOnline && (
+            <div className="space-y-2 pt-5 border-t border-slate-800">
               <LanguagePopover
-                selectedLanguage={selectedLanguage}
+                selectedLanguage={draftFilters.language}
                 onSelectLanguage={(lang) => {
-                  setSelectedLanguage(lang);
-                  executeSearch({ language: lang });
+                  setDraftFilters((prev) => ({ ...prev, language: lang }));
                 }}
                 isMobileModal
               />

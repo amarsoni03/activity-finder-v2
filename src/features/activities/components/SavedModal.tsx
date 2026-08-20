@@ -2,7 +2,7 @@ import React from 'react';
 import { X, Heart, MapPin, Clock, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Activity } from '../types';
-import { useDialogFocus } from '../hooks/useDialogFocus';
+import { useDialogFocus } from '../../../hooks/useDialogFocus';
 
 interface SavedModalProps {
   isOpen: boolean;

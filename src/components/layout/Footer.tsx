@@ -8,6 +8,7 @@ import {
   Shield,
   FileText,
   HelpCircle,
+  Lock,
 } from 'lucide-react';
 
 interface FooterProps {
@@ -16,6 +17,7 @@ interface FooterProps {
   onNavTabChange: (tab: 'my-week' | 'explore' | 'free-time') => void;
   onOpenCreate: () => void;
   onOpenFreeTimePlanner: () => void;
+  onLockSite?: () => void;
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -57,6 +59,7 @@ export const Footer: React.FC<FooterProps> = ({
   onNavTabChange,
   onOpenCreate,
   onOpenFreeTimePlanner,
+  onLockSite,
 }) => {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -84,6 +87,11 @@ export const Footer: React.FC<FooterProps> = ({
       <FooterLink icon={HelpCircle}>Help</FooterLink>
       <FooterLink icon={Shield}>Privacy</FooterLink>
       <FooterLink icon={FileText}>Terms</FooterLink>
+      {onLockSite && (
+        <FooterLink icon={Lock} onClick={onLockSite}>
+          Lock Session
+        </FooterLink>
+      )}
     </ul>
   );
 

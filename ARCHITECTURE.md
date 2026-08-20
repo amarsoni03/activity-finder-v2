@@ -59,6 +59,9 @@ activity-finder/
 │   │   ├── layout/                   # Header, Footer, SidebarFilters, MobileStickyNav
 │   │   └── ui/                       # Toast notification system
 │   │
+│   ├── hooks/                        # Generic shared application & accessibility hooks
+│   │   └── useDialogFocus.ts         # Focus trapping, escape key, and focus restoration
+│   │
 │   ├── pages/                        # Page-level coordinators
 │   │   └── HomePage.tsx              # Main Explore & Results page layout
 │   │

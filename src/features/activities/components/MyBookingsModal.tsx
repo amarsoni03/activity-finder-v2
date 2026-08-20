@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Calendar, MapPin, CheckCircle, Trash2, ExternalLink, Download, Navigation, Users, CalendarDays, Clock, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Booking } from '../types';
-import { useDialogFocus } from '../hooks/useDialogFocus';
+import { useDialogFocus } from '../../../hooks/useDialogFocus';
 
 interface MyBookingsModalProps {
   isOpen: boolean;

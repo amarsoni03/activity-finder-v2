@@ -1,71 +1,48 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { DeliveryFilter } from '../../../types';
+import { normalizeDeliveryMode } from '../utils/search';
 
 interface AttendanceModeSelectorProps {
   selectedMode: DeliveryFilter;
   onSelectMode: (mode: DeliveryFilter) => void;
-  layoutId?: string;
+  label?: string;
 }
 
 const ATTENDANCE_OPTIONS: {
   id: DeliveryFilter;
-  title: string;
+  label: string;
 }[] = [
-  {
-    id: 'In Person',
-    title: 'Near Me',
-  },
-  {
-    id: 'Live Online',
-    title: 'Online',
-  },
-  {
-    id: 'All',
-    title: 'Both',
-  },
+  { id: 'In Person', label: '📍 In Person' },
+  { id: 'Live Online', label: '💻 Online' },
+  { id: 'All', label: 'All' },
 ];
 
 export const AttendanceModeSelector: React.FC<AttendanceModeSelectorProps> = ({
   selectedMode,
   onSelectMode,
-  layoutId = 'attendance-pill',
+  label = 'Mode:',
 }) => {
-  const activeId: DeliveryFilter =
-    selectedMode === 'Self-Paced' || selectedMode === 'Hybrid' || selectedMode === 'Live Online'
-      ? 'Live Online'
-      : selectedMode === 'In Person'
-      ? 'In Person'
-      : 'All';
+  const activeMode = normalizeDeliveryMode(selectedMode);
 
   return (
-    <div className="inline-flex p-1 bg-slate-100 border border-slate-200/80 rounded-xl shadow-2xs w-full max-w-[310px] sm:w-[280px] h-[46px] sm:h-[36px] items-center">
+    <div className="flex items-center gap-1 bg-slate-950/80 border border-slate-800 p-1 rounded-xl shadow-2xs">
+      {label && <span className="text-xs font-bold text-slate-400 pl-2 pr-1.5 select-none">{label}</span>}
       {ATTENDANCE_OPTIONS.map((option) => {
-        const isSelected = activeId === option.id;
+        const isSelected = activeMode === option.id;
 
         return (
           <button
             key={option.id}
             type="button"
             onClick={() => onSelectMode(option.id)}
-            className={`relative isolate overflow-hidden flex-1 px-2 h-[38px] sm:h-[28px] rounded-lg text-xs sm:text-[11px] font-semibold transition-all duration-150 cursor-pointer outline-none flex items-center justify-center active:scale-95 group ${
+            aria-pressed={isSelected}
+            className={`relative px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer outline-none flex items-center justify-center active:scale-95 ${
               isSelected
-                ? 'bg-[#A2FF00] text-[#0A0A0A] font-bold shadow-xs border border-[#8ee600]/40'
-                : 'text-slate-600 hover:text-slate-950 hover:bg-white/80'
+                ? 'bg-[#A2FF00] text-[#0A0A0A] font-bold shadow-xs'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
           >
-            {isSelected && (
-              <motion.div
-                layoutId={layoutId}
-                className="absolute inset-0 bg-[#A2FF00] rounded-lg z-0 shadow-xs border border-[#8ee600]/40"
-                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-              />
-            )}
-            <span className={`relative z-10 truncate transition-colors duration-150 ${
-              isSelected ? 'text-[#0A0A0A] font-bold' : 'text-[#475569] group-hover:text-slate-950'
-            }`}>
-              {option.title}
-            </span>
+            <span className="relative z-10 truncate">{option.label}</span>
           </button>
         );
       })}

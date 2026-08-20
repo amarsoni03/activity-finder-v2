@@ -15,6 +15,7 @@ import {
 } from './features/activities';
 import { useUserPreferences } from './features/personalization';
 import { useActivityFilters } from './features/search';
+import { SitePasswordGate, useSiteProtection } from './features/auth';
 
 // Layout & UI Components
 import { Header } from './components/layout/Header';
@@ -38,6 +39,9 @@ import { CreateActivityModal } from './features/activities/components/CreateActi
 import { AiConciergeModal } from './features/activities/components/AiConciergeModal';
 
 export function App() {
+  // 0. Site Protection / Password Gate
+  const { lockSite } = useSiteProtection();
+
   // 1. Domain Data Hooks
   const { activities, addActivity, updateActivity, addReview } = useActivities();
   const { bookings, createBooking, cancelBooking } = useBookings();
@@ -227,38 +231,38 @@ export function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] text-slate-900 flex flex-col font-sans selection:bg-[#A2FF00] selection:text-[#111827]">
-      {/* 1. Global Header Navigation */}
-      <Header
-        currentAudience={filters.audience}
-        onAudienceChange={(aud) => updateFilters({ audience: aud })}
-        savedCount={savedIds.length}
-        bookingsCount={bookings.length}
-        messagesCount={conversations.length}
-        onOpenSaved={() => setIsSavedModalOpen(true)}
-        onOpenBookings={() => setIsBookingsModalOpen(true)}
-        onOpenMessages={() => {
-          setMessagingActivity(activeSelectedActivity || null);
-          setIsMessagingModalOpen(true);
-        }}
-        onOpenCreate={() => {
-          setActivityToEdit(null);
-          setIsCreateModalOpen(true);
-        }}
-        onOpenAiMatchmaker={() => setIsAiMatchmakerOpen(true)}
-        onOpenFreeTimePlanner={() => {
-          setActiveNavTab('free-time');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onSearchClick={() => {
-          setActiveNavTab('explore');
-          window.scrollTo({ top: 300, behavior: 'smooth' });
-        }}
-        onGoHome={goHome}
-        showSearch={activeNavTab !== 'explore' || !!selectedActivityId}
-        activeNavTab={activeNavTab}
-        onNavTabChange={(tab) => setActiveNavTab(tab as any)}
-      />
+    <SitePasswordGate>
+      <div className="min-h-screen bg-[#F9FAFB] text-slate-900 flex flex-col font-sans selection:bg-[#A2FF00] selection:text-[#111827]">
+        {/* 1. Global Header Navigation */}
+        <Header
+          savedCount={savedIds.length}
+          bookingsCount={bookings.length}
+          messagesCount={conversations.length}
+          onOpenSaved={() => setIsSavedModalOpen(true)}
+          onOpenBookings={() => setIsBookingsModalOpen(true)}
+          onOpenMessages={() => {
+            setMessagingActivity(activeSelectedActivity || null);
+            setIsMessagingModalOpen(true);
+          }}
+          onOpenCreate={() => {
+            setActivityToEdit(null);
+            setIsCreateModalOpen(true);
+          }}
+          onOpenAiMatchmaker={() => setIsAiMatchmakerOpen(true)}
+          onOpenFreeTimePlanner={() => {
+            setActiveNavTab('free-time');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onSearchClick={() => {
+            setActiveNavTab('explore');
+            window.scrollTo({ top: 300, behavior: 'smooth' });
+          }}
+          onGoHome={goHome}
+          onLockSite={lockSite}
+          showSearch={activeNavTab !== 'explore' || !!selectedActivityId}
+          activeNavTab={activeNavTab}
+          onNavTabChange={(tab) => setActiveNavTab(tab as any)}
+        />
 
       {/* 2. Main Routing Section */}
       {activeSelectedActivity ? (
@@ -366,6 +370,7 @@ export function App() {
       <Footer
         activityCount={activities.length}
         onGoHome={goHome}
+        onLockSite={lockSite}
         onNavTabChange={(tab) => {
           if (tab === 'free-time') {
             setActiveNavTab('free-time');
@@ -492,6 +497,7 @@ export function App() {
       {/* 11. Toast Notifications Container */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
+    </SitePasswordGate>
   );
 }
 

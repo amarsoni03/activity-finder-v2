@@ -85,9 +85,6 @@ export const HomePage: React.FC<HomePageProps> = ({
           }
           updateFilters(newF);
         }}
-        onSelectActivity={(act) => openActivityDetail(act)}
-        onOpenAiMatchmaker={onOpenAiMatchmaker}
-        onOpenFreeTimePlanner={onOpenFreeTimePlanner}
       />
 
       {/* Main Page Layout Container */}
@@ -107,37 +104,21 @@ export const HomePage: React.FC<HomePageProps> = ({
             />
           </div>
 
-          {/* Mobile Filter Toggle Drawer Trigger */}
-          <div className="lg:hidden bg-white rounded-2xl p-4 border border-slate-200/70 shadow-2xs mb-2 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <SlidersHorizontal className="w-4 h-4 text-slate-700" />
-              <span className="text-xs font-bold text-slate-900">Filter Results</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsMobileFiltersOpen(true)}
-              className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 cursor-pointer shadow-xs hover:bg-slate-800 transition-all"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Open Filters</span>
-            </button>
-          </div>
-
           {/* Main Content Area (Right Side - 2-Column Desktop Grid) */}
           <div className="lg:col-span-3 space-y-6">
             {/* Result Header & Current Search Summary Box */}
             <div
               id="results-section"
-              className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4 sticky top-20 z-30 scroll-mt-24"
+              className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border border-slate-200/80 shadow-2xs space-y-3 sticky top-16 sm:top-18 z-30 scroll-mt-20"
             >
               {/* Top Row: Total Count, View Toggle & Premium Sort */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-3">
                 {/* Prominent Activity Count */}
-                <div className="flex items-center space-x-3">
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                <div className="flex items-center space-x-2.5">
+                  <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
                     {filteredActivities.length} Activities
                   </h2>
-                  <span className="text-xs font-extrabold px-2.5 py-0.5 bg-[#A2FF00] text-[#111827] rounded-full shadow-2xs">
+                  <span className="text-[11px] font-extrabold px-2.5 py-0.5 bg-[#A2FF00] text-[#111827] rounded-full shadow-2xs">
                     Available Near You
                   </span>
                 </div>

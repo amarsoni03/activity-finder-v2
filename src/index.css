@@ -50,8 +50,8 @@ body {
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --primary: #A2FF00;
   --primary-hover: #91E600;
-  --brand-dark: #074213;
-  --brand-subtle: #E9FCD4;
+  --brand-dark: #0F172A;
+  --brand-subtle: #F1F5F9;
   --bg-main: #F8FAFC;
   --card-surface: #FFFFFF;
   --border: #E2E8F0;
@@ -63,8 +63,8 @@ body {
   --font-sans: 'Plus Jakarta Sans', sans-serif;
   --color-primary: #A2FF00;
   --color-primary-hover: #91E600;
-  --color-brand-dark: #074213;
-  --color-brand-subtle: #E9FCD4;
+  --color-brand-dark: #0F172A;
+  --color-brand-subtle: #F1F5F9;
   --color-bg-main: #F8FAFC;
   --color-card-surface: #FFFFFF;
   --color-border: #E2E8F0;
@@ -86,15 +86,15 @@ body {
   -webkit-backdrop-filter: blur(12px);
 }
 
-/* Reduced motion media query accessibility compliance */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+/* Shake animation for invalid input */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
 }
+
+.animate-shake {
+  animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
 

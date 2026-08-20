@@ -94,10 +94,16 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
 
           {/* Top Floating Header Bar */}
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-            <span className="px-2.5 py-1 text-xs font-medium tracking-wide rounded-full backdrop-blur-md bg-black/45 text-white shadow-sm border border-white/20">
-              {activity.category}
-            </span>
+          <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1.5 max-w-[75%] overflow-hidden">
+              <span className="px-2.5 py-1 text-xs font-medium tracking-wide rounded-full backdrop-blur-md bg-slate-950/60 text-white shadow-sm border border-white/20 truncate">
+                {activity.category}
+              </span>
+              <span className="px-2.5 py-1 text-[11px] font-semibold rounded-full backdrop-blur-md bg-slate-950/60 text-slate-200 shadow-sm border border-white/15 flex items-center gap-1 shrink-0">
+                <span>{deliveryIcon}</span>
+                <span>{displayDeliveryMode}</span>
+              </span>
+            </div>
 
             <motion.button
               whileTap={{ scale: 0.88 }}
@@ -135,20 +141,15 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           </div>
         </div>
 
-        {/* Listing Type Tagline & Delivery Format Badge */}
-        <div className="flex items-center space-x-2 mb-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#074213]">
+        {/* Listing Type Subheader */}
+        <div className="flex items-center space-x-2 mb-1">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
             {listingType}
-          </span>
-          <span className="text-slate-300">•</span>
-          <span className="bg-neutral-100 text-neutral-600 text-xs font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 border border-neutral-200/70 shrink-0">
-            <span>{deliveryIcon}</span>
-            <span>{displayDeliveryMode}</span>
           </span>
         </div>
 
         {/* Activity Title */}
-        <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug mb-2 group-hover:text-[#074213] transition-colors line-clamp-2 sm:min-h-[52px]">
+        <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug mb-2.5 group-hover:text-slate-700 transition-colors line-clamp-2 sm:min-h-[52px]">
           {activity.title}
         </h3>
 
@@ -171,7 +172,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 
           {/* WHERE: Metro Station, Line & Walk time */}
           <div className="flex items-start gap-2 text-slate-600">
-            <MapPin className="w-4 h-4 text-[#074213] shrink-0 mt-0.5" />
+            <MapPin className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
             <span className="min-w-0 break-words">
               <span className="font-semibold text-slate-800">{activity.metroStationName}</span>
               {activity.metroLineName && (

@@ -13,7 +13,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { Activity, ActivityConversation, ConversationMessage, MessageAttachment } from '../types';
-import { useDialogFocus } from '../hooks/useDialogFocus';
+import { useDialogFocus } from '../../../hooks/useDialogFocus';
 
 export interface ActivityMessagingModalProps {
   activity: Activity | null;

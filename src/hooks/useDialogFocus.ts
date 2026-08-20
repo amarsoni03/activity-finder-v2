@@ -9,6 +9,10 @@ const FOCUSABLE_SELECTORS = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
 
+/**
+ * Generic accessibility hook to trap focus within modal dialogs,
+ * handle escape key dismissal, and restore focus to opener element upon unmount/close.
+ */
 export function useDialogFocus(isOpen: boolean, onClose?: () => void) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);

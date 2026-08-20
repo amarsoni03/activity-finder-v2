@@ -16,7 +16,6 @@ export { ProviderTrustBadge } from './components/ProviderTrustBadge';
 export { Reviews } from './components/Reviews';
 export { CompareActivities } from './components/CompareActivities';
 export { CreateActivityModal } from './components/CreateActivityModal';
-export { ContactInstructorModal } from './components/ContactInstructorModal';
 export { ActivityMessagingModal } from './components/ActivityMessagingModal';
 export { WaitlistModal } from './components/WaitlistModal';
 export { SavedModal } from './components/SavedModal';

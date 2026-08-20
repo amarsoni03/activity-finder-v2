@@ -60,7 +60,7 @@ export const TimeSelectorPopover: React.FC<TimeSelectorPopoverProps> = ({
     <div className="space-y-4">
       {/* Time of Day */}
       <div>
-        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">
+        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
           Time of Day
         </span>
         <div className="grid grid-cols-3 gap-2">
@@ -76,12 +76,12 @@ export const TimeSelectorPopover: React.FC<TimeSelectorPopoverProps> = ({
                 className={`px-3 py-2.5 rounded-xl text-xs font-semibold flex flex-col items-center justify-center space-y-1 transition-all cursor-pointer border min-h-[58px] ${
                   isActive
                     ? 'bg-[#A2FF00] text-[#0A0A0A] border-[#8ee600]/40 font-bold shadow-xs'
-                    : 'bg-white text-slate-800 border-slate-200/80 hover:bg-slate-50 hover:text-slate-950 hover:border-slate-300'
+                    : 'bg-slate-950/60 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white hover:border-slate-700'
                 }`}
               >
                 <span className="text-base">{icon}</span>
                 <span className="font-bold">{slot}</span>
-                <span className={`text-[10px] ${isActive ? 'text-slate-950 font-semibold' : 'text-slate-500'}`}>{subtext}</span>
+                <span className={`text-[10px] ${isActive ? 'text-slate-950 font-semibold' : 'text-slate-400'}`}>{subtext}</span>
               </button>
             );
           })}
@@ -90,7 +90,7 @@ export const TimeSelectorPopover: React.FC<TimeSelectorPopoverProps> = ({
 
       {/* Quick Day Presets */}
       <div>
-        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">
+        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
           Day Presets
         </span>
         <div className="grid grid-cols-3 gap-2">
@@ -100,7 +100,7 @@ export const TimeSelectorPopover: React.FC<TimeSelectorPopoverProps> = ({
             className={`px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border min-h-[44px] ${
               selectedDays.length === 0
                 ? 'bg-[#A2FF00] text-[#0A0A0A] border-[#8ee600]/40 font-bold shadow-xs'
-                : 'bg-white text-slate-800 border-slate-200/80 hover:bg-slate-50 hover:text-slate-950 hover:border-slate-300'
+                : 'bg-slate-950/60 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white hover:border-slate-700'
             }`}
           >
             Any Day
@@ -117,7 +117,7 @@ export const TimeSelectorPopover: React.FC<TimeSelectorPopoverProps> = ({
             className={`px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border min-h-[44px] ${
               isWeekdayActive
                 ? 'bg-[#A2FF00] text-[#0A0A0A] border-[#8ee600]/40 font-bold shadow-xs'
-                : 'bg-white text-slate-800 border-slate-200/80 hover:bg-slate-50 hover:text-slate-950 hover:border-slate-300'
+                : 'bg-slate-950/60 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white hover:border-slate-700'
             }`}
           >
             Weekdays
@@ -130,7 +130,7 @@ export const TimeSelectorPopover: React.FC<TimeSelectorPopoverProps> = ({
             className={`px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border min-h-[44px] ${
               isWeekendActive
                 ? 'bg-[#A2FF00] text-[#0A0A0A] border-[#8ee600]/40 font-bold shadow-xs'
-                : 'bg-white text-slate-800 border-slate-200/80 hover:bg-slate-50 hover:text-slate-950 hover:border-slate-300'
+                : 'bg-slate-950/60 text-slate-200 border-slate-800 hover:bg-slate-800 hover:text-white hover:border-slate-700'
             }`}
           >
             Weekend
@@ -140,7 +140,7 @@ export const TimeSelectorPopover: React.FC<TimeSelectorPopoverProps> = ({
 
       {/* Done button — only shown in desktop popover, not mobile modal (sheet has its own CTA) */}
       {!inMobileModal && (
-        <div className="pt-2 flex justify-end border-t border-slate-200">
+        <div className="pt-2 flex justify-end border-t border-slate-800">
           <button
             type="button"
             onClick={() => setIsOpen(false)}
@@ -160,24 +160,26 @@ export const TimeSelectorPopover: React.FC<TimeSelectorPopoverProps> = ({
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <label className="text-[11px] font-bold tracking-wider uppercase text-slate-700 block mb-1">
+      <label className="text-[11px] font-bold tracking-wider uppercase text-slate-300 block mb-1">
         {label}
       </label>
 
       <button
         type="button"
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-white hover:bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-left flex items-center justify-between transition-all cursor-pointer shadow-xs group min-h-[44px]"
+        className="w-full bg-slate-950/80 hover:bg-slate-800 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-left flex items-center justify-between transition-all cursor-pointer shadow-xs group min-h-[44px]"
       >
         <div className="flex items-center space-x-2.5 min-w-0">
-          <Clock className="w-4 h-4 text-[#074213] shrink-0" />
-          <span className="text-sm font-bold text-slate-900 truncate">
+          <Clock className="w-4 h-4 text-[#A2FF00] shrink-0" />
+          <span className="text-sm font-bold text-white truncate">
             {timeSummary}
           </span>
         </div>
         <ChevronDown
-          className={`w-4 h-4 text-slate-500 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-slate-900' : 'group-hover:text-slate-700'
+          className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-white' : 'group-hover:text-slate-200'
           }`}
         />
       </button>
@@ -189,7 +191,7 @@ export const TimeSelectorPopover: React.FC<TimeSelectorPopoverProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: -2 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute left-0 top-full mt-1.5 w-full sm:w-80 rounded-2xl shadow-2xl z-50 p-4 bg-white border border-slate-200 text-slate-900"
+            className="absolute left-0 top-full mt-1.5 w-full sm:w-80 rounded-2xl shadow-2xl z-50 p-4 bg-slate-900 border border-slate-700/90 text-white"
           >
             {renderContent(false)}
           </motion.div>
